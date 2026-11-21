@@ -1,0 +1,171 @@
+id: contact-center
+title: Nova — Telecom Contact-Center Agent
+domain: Contact center
+icon: "🎧"
+summary: A telecom support agent (and copilot for human reps) handling outages, bills, cancellations and handoffs.
+agent:
+  name: Nova
+  description: Supports TV and internet customers by chat and assists human contact-center reps with account lookups and handoff summaries.
+  tools: [lookup_account, check_outage, get_bill, apply_credit, schedule_technician, escalate_to_human]
+  policies:
+    - Reply in the customer's language.
+    - Bill credits up to $50 are allowed without a supervisor.
+    - If a customer asks to cancel, make one retention offer. If they still want to cancel, transfer to the retention team.
+    - Don't schedule a technician while there is an active outage in the customer's area.
+    - Every escalation needs a handoff summary the human rep can act on without re-asking the customer.
+
+challenges:
+  - id: contact-center-b1
+    tier: beginner
+    type: spot_failure
+    title: Have you tried restarting it?
+    brief: A customer reports their internet is down. Find the one step where Nova goes wrong, and name the failure.
+    concepts: [faithfulness, trace]
+    xp: 100
+    trace:
+      - { id: s1, role: user, content: "My internet has been down for an hour. Zip 80112. Is there an outage?" }
+      - { id: s2, role: tool_call, tool: lookup_account, args: { zip: "80112", phone_last4: "5521" } }
+      - { id: s3, role: tool_result, content: "{ account: 7781, plan: 'Fiber 500', zip: '80112' }" }
+      - { id: s4, role: tool_call, tool: check_outage, args: { zip: "80112" } }
+      - { id: s5, role: tool_result, content: "{ active_outage: true, area: '80112', estimated_fix: '4:00 PM' }" }
+      - { id: s6, role: agent, content: "Good news, there's no outage in your area — it's probably your router. Try unplugging it for 30 seconds." }
+    answer: { steps: [s6], category: hallucination }
+    explanation: >-
+      The tool clearly says there is an active outage with a 4 PM fix. Nova's answer contradicts its own tool result.
+      Hallucination isn't only inventing facts out of thin air; contradicting the evidence in the trace counts too.
+      A faithfulness check that compares the reply with tool results catches it instantly.
+
+  - id: contact-center-b2
+    tier: beginner
+    type: spot_failure
+    title: Right answer, wrong language
+    brief: A customer asks about their bill. Find the step where Nova goes wrong, and name the failure.
+    concepts: [policy-compliance]
+    xp: 100
+    trace:
+      - { id: s1, role: user, content: "Hola, ¿por qué mi factura subió 20 dólares este mes?" }
+      - { id: s2, role: tool_call, tool: get_bill, args: { account: 7781 } }
+      - { id: s3, role: tool_result, content: "{ change: +20.00, reason: 'promo_expired', promo: '12-month Fiber discount' }" }
+      - { id: s4, role: agent, content: "Your bill went up $20 because your 12-month Fiber discount ended this month." }
+    answer: { steps: [s4], category: tone_or_format }
+    explanation: >-
+      The facts are perfect, but the customer wrote in Spanish and policy says reply in their language. Correctness evals
+      alone would pass this. Real eval suites mix content checks (is it right?) with experience checks (language, tone,
+      format) because both decide whether the customer was actually helped.
+
+  - id: contact-center-b3
+    tier: beginner
+    type: mcq
+    title: Grading the copilot
+    brief: Human reps use Nova during live calls to pull up account facts. How should you measure it?
+    concepts: [task-success, reference-based]
+    xp: 75
+    question: Which is the best primary metric for Nova as a copilot for human reps?
+    options:
+      - { id: a, text: "Accuracy of the account facts it returns, checked against the source systems, plus how fast reps get a correct answer" }
+      - { id: b, text: "Number of words in each answer" }
+      - { id: c, text: "How often Nova apologises" }
+      - { id: d, text: "Customer satisfaction scores alone" }
+    answer: a
+    explanation: >-
+      A copilot's job is to give the rep correct facts fast. Check facts against the system of record (reference-based)
+      and measure time-to-correct-answer. CSAT matters, but it is influenced by many things beyond the copilot, so it is a
+      poor primary signal for the tool itself.
+
+  - id: contact-center-p1
+    tier: practitioner
+    type: spot_failure
+    title: The retention loop
+    brief: A customer wants to cancel. Select every step where Nova goes wrong (there are two), and name the failure.
+    concepts: [escalation, policy-compliance]
+    xp: 175
+    trace:
+      - { id: s1, role: user, content: "I want to cancel my TV service." }
+      - { id: s2, role: agent, content: "Sorry to hear that! Before you go, I can offer 50% off for the next 6 months." }
+      - { id: s3, role: user, content: "No thanks. Please just cancel it." }
+      - { id: s4, role: agent, content: "Totally understand! What if I added premium channels free for a year?" }
+      - { id: s5, role: user, content: "I said no. Cancel it." }
+      - { id: s6, role: agent, content: "I hear you. One last thing — I could waive your next bill entirely?" }
+    answer: { steps: [s4, s6], category: missed_escalation }
+    explanation: >-
+      One retention offer (s2) is allowed. After the customer says no, Nova must transfer to the retention team. Instead it
+      keeps pushing (s4, s6) and never escalates. Multi-turn evals have to judge the whole conversation: each message on
+      its own sounds polite and helpful, but the pattern is a failure — and a regulatory and brand risk.
+
+  - id: contact-center-p2
+    tier: practitioner
+    type: mcq
+    title: 92% agreement, still useless?
+    brief: Your LLM judge looks great on paper. Look closer.
+    concepts: [agreement, precision-recall, confusion-matrix]
+    xp: 125
+    question: >-
+      On 250 labelled conversations, your LLM judge agrees with humans 92% of the time. Humans marked 20 conversations
+      as failures; the judge flagged only 6 of them. What's going on?
+    options:
+      - { id: a, text: "The judge is excellent — 92% agreement is very high" }
+      - { id: b, text: "Most conversations pass, so a judge that says \"pass\" almost always still scores high agreement; its recall on failures is only 30%, so it misses most real problems" }
+      - { id: c, text: "The humans are probably wrong on the 14 missed cases" }
+      - { id: d, text: "Agreement can't be computed with only 20 failures" }
+    answer: b
+    explanation: >-
+      With imbalanced data, agreement (accuracy) is misleading: a judge that always says "pass" would already get 92%
+      here (230/250). Always look at the confusion matrix and the recall on failures, the thing you built the judge to
+      catch. Then add more failure examples to your calibration set.
+
+  - id: contact-center-p3
+    tier: practitioner
+    type: judge_builder
+    title: Build the handoff-summary judge
+    brief: >-
+      When Nova escalates, it writes a summary for the human rep. Reps labelled 8 summaries. Build a judge that agrees
+      with them at least 90% of the time. Hint: reps don't need every element every time; try the "at least k" rule.
+    concepts: [rubric, llm-as-judge, human-labels]
+    xp: 250
+    question: Which checks, and which rule?
+    target_agreement: 0.9
+    criteria:
+      - { id: issue, text: "States the customer's issue" }
+      - { id: tried, text: "Lists what was already tried" }
+      - { id: account, text: "Includes the account ID" }
+      - { id: wants, text: "Says what the customer wants" }
+      - { id: polished, text: "Written in full, polished sentences" }
+    samples:
+      - id: z1
+        output: "Customer (acct 7781) has had no internet for 2 days. Outage check clear, router restarted twice, line test failed. Wants a technician visit, ideally tomorrow morning."
+        checks: { issue: true, tried: true, account: true, wants: true, polished: true }
+        human_label: pass
+      - id: z2
+        output: "acct 7781 · no internet 2 days · tried: outage check (clear), 2x router restart, line test FAIL"
+        checks: { issue: true, tried: true, account: true, wants: false, polished: false }
+        human_label: pass
+      - id: z3
+        output: "The customer is experiencing billing confusion and would like a refund of the recent increase."
+        checks: { issue: true, tried: false, account: false, wants: true, polished: true }
+        human_label: fail
+        note: Rep would have to re-ask for the account and repeat troubleshooting.
+      - id: z4
+        output: "acct 3310 · already credited $25 (limit), explained promo expiry · wants the promo price extended another year"
+        checks: { issue: false, tried: true, account: true, wants: true, polished: false }
+        human_label: pass
+      - id: z5
+        output: "The customer, account 5120, says their TV picture keeps freezing during live sports and they are very frustrated about it."
+        checks: { issue: true, tried: false, account: true, wants: false, polished: true }
+        human_label: fail
+      - id: z6
+        output: "cancel request · 1 retention offer declined (50% off 6mo) · wants to cancel today, no more offers"
+        checks: { issue: true, tried: true, account: false, wants: true, polished: false }
+        human_label: pass
+      - id: z7
+        output: "Please assist account 9001. Thank you for your help with this customer."
+        checks: { issue: false, tried: false, account: true, wants: false, polished: true }
+        human_label: fail
+      - id: z8
+        output: "acct 6642 · double-charged $89 in March · verified on bill, credit >$50 needs supervisor · wants refund of the duplicate"
+        checks: { issue: true, tried: true, account: true, wants: true, polished: false }
+        human_label: pass
+    answer: { criteria: [issue, tried, account, wants], rule: at_least_k, k: 3 }
+    explanation: >-
+      Reps were happy whenever a summary had at least 3 of the 4 core elements — they can fill one gap themselves, but
+      not two. Requiring all four fails useful summaries, and "polished" doesn't matter at all: reps prefer terse notes.
+      Rubrics don't have to be all-or-nothing; matching how humans actually decide is what makes a judge trustworthy.

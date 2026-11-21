@@ -1,0 +1,28 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Grader unit tests + content evals
+        run: npm test
+      - name: Type-check and build
+        run: npm run build
+      - name: Bundle budget (< 300 KB gzipped JS)
+        run: |
+          size=$(cat dist/assets/*.js | gzip -c | wc -c)
+          echo "JS gzipped: $size bytes"
+          test "$size" -lt 307200

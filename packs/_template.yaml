@@ -1,0 +1,72 @@
+# Copy this file to packs/<your-domain>.yaml (no leading underscore), fill it in, then run `npm test`.
+# Files starting with "_" are ignored by the game.
+id: my-domain                      # lowercase-dashes; every challenge id must start with "my-domain-"
+title: AgentName — What It Does
+domain: My industry
+icon: "🧩"
+summary: One sentence a player reads on the card.
+agent:
+  name: AgentName
+  description: What the agent is for, in one or two sentences.
+  tools: [tool_a, tool_b, escalate_to_human]     # every tool_call in a trace must use one of these
+  policies:
+    - Rules the agent must follow. Policy breaks make great puzzles.
+
+challenges:
+  # 🔎 Trace Detective — the player clicks the failing step(s) and names the failure.
+  - id: my-domain-b1
+    tier: beginner                 # beginner | practitioner | advanced | pro | sme
+    type: spot_failure
+    title: Short catchy title
+    brief: Tell the player what to do, and how many steps to select if more than one.
+    concepts: [trace]              # keys from src/engine/glossary.ts
+    xp: 100
+    trace:
+      - { id: s1, role: user, content: "What the user says" }
+      - { id: s2, role: tool_call, tool: tool_a, args: { key: value } }
+      - { id: s3, role: tool_result, content: "{ what: 'the tool returned' }" }
+      - { id: s4, role: agent, content: "What the agent says back" }
+    answer: { steps: [s4], category: hallucination }   # categories: src/engine/taxonomy.ts
+    explanation: >-
+      Teach the why: what went wrong, why it matters, and which eval would catch it in production.
+
+  # 🧭 Eval Call — multiple choice about metrics, datasets and eval design. 3+ options.
+  - id: my-domain-b2
+    tier: beginner
+    type: mcq
+    title: Which eval?
+    brief: One line of setup.
+    concepts: [task-success]
+    xp: 75
+    question: The question.
+    options:
+      - { id: a, text: "Plausible but wrong" }
+      - { id: b, text: "Right" }
+      - { id: c, text: "Plausible but wrong" }
+    answer: b
+    explanation: >-
+      Why b is right and why the tempting wrong answers fail.
+
+  # ⚖️ Judge Builder — the player builds a judge and checks it against human labels.
+  # Content evals require: the reference judge reaches target_agreement, the always-pass judge fails,
+  # and ticking every check fails (so include at least one tempting check humans don't care about).
+  - id: my-domain-p1
+    tier: practitioner
+    type: judge_builder
+    title: Build the X judge
+    brief: Who labelled the samples, and the agreement target.
+    concepts: [llm-as-judge, human-labels]
+    xp: 250
+    question: Which checks should your judge require?
+    target_agreement: 0.9
+    criteria:
+      - { id: core, text: "A check humans really care about" }
+      - { id: fluff, text: "A check that sounds nice but humans ignore" }
+    samples:   # 6–10 samples; every sample must set every criterion
+      - { id: x1, output: "...", checks: { core: true, fluff: true }, human_label: pass }
+      - { id: x2, output: "...", checks: { core: true, fluff: false }, human_label: pass }
+      - { id: x3, output: "...", checks: { core: false, fluff: true }, human_label: fail, note: "why humans failed it" }
+      - { id: x4, output: "...", checks: { core: false, fluff: false }, human_label: fail }
+    answer: { criteria: [core], rule: all }   # or rule: at_least_k with k: 2
+    explanation: >-
+      What the humans actually judged on, and the lesson about judge design.

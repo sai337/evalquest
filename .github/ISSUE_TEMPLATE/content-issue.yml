@@ -1,0 +1,12 @@
+name: Challenge feedback
+description: A challenge is unclear, wrong, or too easy/hard
+labels: [content]
+body:
+  - type: input
+    id: challenge
+    attributes: { label: Challenge ID, placeholder: "banking-p1" }
+    validations: { required: true }
+  - type: textarea
+    id: what
+    attributes: { label: What's wrong? }
+    validations: { required: true }

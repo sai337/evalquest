@@ -1,0 +1,21 @@
+name: New scenario pack
+description: Propose an agentic use case to add as a pack
+labels: [new-pack, good first issue]
+body:
+  - type: input
+    id: domain
+    attributes: { label: Domain, placeholder: "Insurance claims, healthcare triage, travel booking…" }
+    validations: { required: true }
+  - type: textarea
+    id: agent
+    attributes: { label: The agent, description: "What it does, which tools it calls, which policies it must follow" }
+    validations: { required: true }
+  - type: textarea
+    id: failures
+    attributes: { label: Realistic failures, description: "Failures you've seen (or fear) in this domain. These become the puzzles." }
+  - type: checkboxes
+    id: build
+    attributes:
+      label: Contribution
+      options:
+        - label: I'd like to write this pack myself

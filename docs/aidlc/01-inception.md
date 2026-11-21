@@ -134,6 +134,7 @@ classDiagram
 | U3 Content | 1 | E-commerce, banking, contact-center packs: Beginner + Practitioner |
 | U4 Quality | 1 | Grader unit tests, content evals, GitHub Actions CI |
 | U5 Launch | 1 | README, CONTRIBUTING, pack template, Vercel deploy, launch kit |
+| U5b Pack Forge | 1.5 | Self-improving content loop: an agent drafts a pack → content evals + rubric judge grade it → failures become rules in `forge/LESSONS.md` → next run reads them → opens a PR for human review |
 | U6 Advanced + Pro | 2 | Multi-turn, RAG faithfulness, trajectory evals, judge calibration (kappa), drift; 6 more domains |
 | U7 SME + Live Mode | 3 | Boss fights, bring-your-own-key judge runs, OpenInference trace export for Arize Phoenix |
 
