@@ -1,22 +1,23 @@
 # Status
 
-**Updated:** 2026-11-20 · **Phase:** 1 complete (AI-DLC Inception → Construction → Operations)
+**Updated:** 2026-11-21 · **Version:** 0.2
 
 ## Live
 - Game: https://evalquest-livid.vercel.app (auto-deploys from `main`)
+- Optional backend: Supabase project `evalquest` (us-east-1) for GitHub sign-in, sync and leaderboard
 - CI: tests + content evals + type-check + build + bundle budget on every push and PR
 
 ## Done
-- Engine: Zod schema, 3 graders (Trace Detective, Eval Call, Judge Builder), progress/XP/ranks/badges
-- Content: 3 packs (e-commerce, banking, contact center), 18 challenges, Beginner + Practitioner tiers
-- Quality: 29 tests incl. content evals; mutation check confirmed a broken pack is rejected
-- Docs: AI-DLC phase docs, CONTRIBUTING, pack template (itself validated), issue/PR templates, launch kit
+- v0.1: engine, 3 graders, 3 packs, Beginner + Practitioner, content evals, CI, docs
+- v0.2: 6 new packs (insurance, travel, coding agent, SRE/NOC, HR, RAG) → 9 packs, 48 challenges; Advanced tier live;
+  hints (−25% XP), daily puzzle, XP/rank-up toasts, tier pages, compact failure picker, share-my-rank, reset;
+  optional Supabase sign-in/sync/leaderboard with RLS; 44 tests
+
+## Owner action needed
+- Turn on GitHub login (one time): create a GitHub OAuth app and paste its ID/secret into Supabase → Auth → Providers → GitHub;
+  set Site URL to the game URL. Until then the Sign in button shows "provider not enabled".
 
 ## Next
 1. Pack Forge (U5b): self-improving pack generator → content evals + rubric judge → `forge/LESSONS.md` → PR
-2. Advanced tier content + 3 more packs (insurance claims, coding agent, SRE/NOC)
-3. Repo owner: set GitHub topics, description and social preview (see docs/LAUNCH.md)
-
-## Open decisions
-- Model/key for the Pack Forge (TrueFoundry gateway, OpenRouter or Claude) stored as a GitHub Actions secret
-- Custom domain for the game
+2. Pro tier: judge calibration (Cohen's κ), drift, CI release gates
+3. More packs: healthcare admin, legal review, sales SDR, education tutor, voice agent, computer-use agent

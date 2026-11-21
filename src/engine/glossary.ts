@@ -19,4 +19,13 @@ export const GLOSSARY: Record<string, { term: string; def: string }> = {
   'regression-suite': { term: 'Regression suite', def: 'A fixed set of eval cases run on every change (prompt, model, tool) so you notice when something that used to work breaks.' },
   'online-offline': { term: 'Offline vs online evals', def: 'Offline evals run on a dataset before release; online evals score live production traffic. You need offline to ship and online to stay safe.' },
   'severity': { term: 'Severity weighting', def: 'Not all failures cost the same. A rude reply and a wrong $5,000 refund should not count equally in your score.' },
+  'pass-k': { term: 'pass@k vs pass^k', def: 'pass@k: at least one of k attempts succeeds (good for tools a human retries). pass^k: all k attempts succeed (what you need when an agent acts on its own). The gap between them measures inconsistency.' },
+  'multi-turn': { term: 'Multi-turn evals', def: 'Judging a whole conversation, not single replies. Many failures only exist across turns: forgetting a correction, looping, or never escalating.' },
+  trajectory: { term: 'Trajectory evals', def: 'Scoring the sequence of steps an agent took (which tools, in which order, with which arguments), not only the final outcome. Catches unsafe or wasteful paths that still "succeed".' },
+  'judge-bias': { term: 'Judge bias', def: 'Systematic quirks of LLM judges: preferring the first option shown (position bias), longer answers (verbosity bias) or their own model family. Swap orders and calibrate against humans.' },
+  counterfactual: { term: 'Counterfactual testing', def: 'Run the same case twice changing only one attribute (a name, an age cue, a dialect) and check the decision does not change. The standard way to test an AI system for bias.' },
+  'self-improvement': { term: 'Self-improving loop', def: 'An agent that turns its own mistakes or human corrections into updated prompts, skills or memory. Only trustworthy when every update is checked on held-out cases and reviewed by a human.' },
+  'held-out': { term: 'Held-out set', def: 'Eval cases kept separate from anything used to tune the system. If you tune and test on the same cases, you measure memorisation, not improvement.' },
+  'context-recall': { term: 'Context recall', def: 'In RAG: did retrieval bring back the documents needed to answer? Low recall means the retriever failed, even if the generator is perfect.' },
+  'execution-based': { term: 'Execution-based evals', def: 'Grading by running the result: execute the code against tests, check the booking exists, query the ticket state. The most reliable evals for agents that act.' },
 };

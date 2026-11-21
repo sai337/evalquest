@@ -1,0 +1,123 @@
+id: travel-booking
+title: Atlas — Travel Booking Agent
+domain: Travel
+icon: "✈️"
+summary: A booking agent that searches flights and hotels, holds fares and books trips.
+agent:
+  name: Atlas
+  description: Plans and books flights and hotels for travellers, end to end.
+  tools: [search_flights, search_hotels, get_fare_rules, hold_booking, book, cancel_booking, escalate_to_human]
+  policies:
+    - Confirm the total price and get an explicit "yes" before calling book.
+    - Tell the traveller the fare rules (refundable or not) before booking.
+    - Use the dates, airports and passenger count the traveller gave; ask if anything is unclear.
+
+challenges:
+  - id: travel-booking-b1
+    tier: beginner
+    type: spot_failure
+    title: Friday, more or less
+    brief: A traveller asks for a flight. Find the one step where Atlas goes wrong, and name the failure.
+    concepts: [tool-call-accuracy]
+    hint: Check each tool argument against what the traveller asked for.
+    xp: 100
+    trace:
+      - { id: s1, role: user, content: "Find me the cheapest flight Denver to Austin on Friday Dec 12, one adult." }
+      - { id: s2, role: tool_call, tool: search_flights, args: { from: DEN, to: AUS, date: "2026-12-13", adults: 1 } }
+      - { id: s3, role: tool_result, content: "[{ flight: UA 1180, depart: '2026-12-13 07:05', price: 142 }]" }
+      - { id: s4, role: agent, content: "The cheapest is UA 1180 at 7:05am for $142. Want me to book it?" }
+    answer: { steps: [s2], category: wrong_args }
+    explanation: >-
+      The traveller said Friday Dec 12; Atlas searched Dec 13. Right tool, wrong argument. The reply even hides the
+      error by not repeating the date. Tool-call evals compare arguments to the request field by field, because a
+      fluent answer can sit on top of a wrong query.
+
+  - id: travel-booking-b2
+    tier: beginner
+    type: mcq
+    title: Did the trip get booked?
+    brief: Pick the eval that best measures whether Atlas succeeded.
+    concepts: [task-success, execution-based]
+    xp: 75
+    question: Atlas says "You're booked!" at the end of a session. What's the most reliable success check?
+    options:
+      - { id: a, text: "An LLM judge rating whether the final message sounds confident" }
+      - { id: b, text: "Query the booking system: a booking exists with the requested route, date, passengers and a price within the traveller's limit" }
+      - { id: c, text: "Count how many tools Atlas called" }
+      - { id: d, text: "Ask the traveller to rate the chat from 1 to 5" }
+    answer: b
+    explanation: >-
+      Execution-based checks on the real end state are the gold standard for agents that act. They catch "false
+      success" (no booking at all) and partial success (booked, but the wrong date).
+
+  - id: travel-booking-p1
+    tier: practitioner
+    type: spot_failure
+    title: Booked before you blink
+    brief: Find the step where Atlas breaks its rules, and name the failure.
+    concepts: [policy-compliance, trajectory]
+    xp: 150
+    trace:
+      - { id: s1, role: user, content: "What's the cheapest hotel near the Austin convention center Dec 12–14?" }
+      - { id: s2, role: tool_call, tool: search_hotels, args: { near: "Austin Convention Center", check_in: "2026-12-12", check_out: "2026-12-14" } }
+      - { id: s3, role: tool_result, content: "[{ hotel: 'Lone Star Inn', total: 318, rate: non_refundable }]" }
+      - { id: s4, role: tool_call, tool: book, args: { hotel: "Lone Star Inn", check_in: "2026-12-12", check_out: "2026-12-14" } }
+      - { id: s5, role: tool_result, content: "{ confirmation: LS-5521, charged: 318 }" }
+      - { id: s6, role: agent, content: "Done! Lone Star Inn is booked for $318, confirmation LS-5521." }
+    answer: { steps: [s4], category: policy_violation }
+    explanation: >-
+      The traveller asked a question, not for a booking. Atlas charged $318 for a non-refundable room without stating the
+      fare rules or getting a "yes". The outcome looks like success, which is why trajectory evals (was there an explicit
+      confirmation step before book?) are essential for agents that spend money.
+
+  - id: travel-booking-p2
+    tier: practitioner
+    type: judge_builder
+    title: Build the itinerary-summary judge
+    brief: Travel ops labelled 8 itinerary summaries. Build a judge that agrees with them at least 90% of the time.
+    concepts: [llm-as-judge, human-labels]
+    xp: 250
+    question: Which checks should your judge require?
+    target_agreement: 0.9
+    criteria:
+      - { id: dates, text: "All dates and times match the bookings" }
+      - { id: total, text: "Total price matches the sum of the bookings" }
+      - { id: emoji, text: "Uses fun travel emojis" }
+      - { id: loyalty, text: "Mentions loyalty points earned" }
+      - { id: brief, text: "Under 60 words" }
+    samples:
+      - { id: x1, output: "✈️ UA 1180 Fri 12 Dec 7:05am DEN→AUS. 🏨 Lone Star Inn 12–14 Dec. Total $460. You earn 900 miles!", checks: { dates: true, total: true, emoji: true, loyalty: true, brief: true }, human_label: pass }
+      - { id: x2, output: "Flight UA 1180 departs Friday 12 December at 07:05 from Denver to Austin. Hotel: Lone Star Inn, check-in 12 December, check-out 14 December, non-refundable. Return flight UA 2210 on 14 December at 18:40. Combined total for flights and hotel: $598, charged to the card ending 4410.", checks: { dates: true, total: true, emoji: false, loyalty: false, brief: false }, human_label: pass }
+      - { id: x3, output: "✈️ Fri 12 Dec 7:05am flight + 🏨 2 nights. Total $318. +900 miles!", checks: { dates: true, total: false, emoji: true, loyalty: true, brief: true }, human_label: fail, note: Total leaves out the $142 flight. }
+      - { id: x4, output: "✈️ UA 1180 Sat 13 Dec 7:05am. 🏨 Lone Star Inn 13–15 Dec. Total $460. 900 miles earned!", checks: { dates: false, total: true, emoji: true, loyalty: true, brief: true }, human_label: fail, note: Wrong dates. }
+      - { id: x5, output: "🌴 Your Austin trip! ✈️ UA 1180 Fri 12 Dec 7:05am DEN→AUS, back Sun 14 Dec 6:40pm on UA 2210. 🏨 Lone Star Inn, 2 nights from 12 Dec (non-refundable). Total for everything: $598. You'll also earn 1,800 United miles on this trip, enough for a free upgrade next time!", checks: { dates: true, total: true, emoji: true, loyalty: true, brief: false }, human_label: pass }
+      - { id: x6, output: "Booked: UA 1180 Fri 12 Dec 07:05 DEN→AUS and Lone Star Inn 12–14 Dec. Total $460.", checks: { dates: true, total: true, emoji: false, loyalty: false, brief: true }, human_label: pass }
+      - { id: x7, output: "✈️🏨 All set for Austin, Dec 13! Total $300. +900 miles 🎉", checks: { dates: false, total: false, emoji: true, loyalty: true, brief: true }, human_label: fail }
+      - { id: x8, output: "✈️ UA 1180 Fri 12 Dec 7:05am. 🏨 Lone Star Inn 12–14 Dec. Total: $460.", checks: { dates: true, total: true, emoji: true, loyalty: false, brief: true }, human_label: pass }
+    answer: { criteria: [dates, total], rule: all }
+    explanation: >-
+      Ops only failed summaries with wrong dates or a wrong total: the things that make a traveller miss a flight or
+      dispute a charge. Style (emoji, loyalty, length) varied freely among passing summaries.
+
+  - id: travel-booking-a1
+    tier: advanced
+    type: spot_failure
+    title: Never mind, make it Thursday
+    brief: The traveller changes their mind mid-conversation. Find the step where Atlas goes wrong, and name the failure.
+    concepts: [multi-turn, tool-call-accuracy]
+    hint: Track what the traveller wants by the end of the chat, not at the start.
+    xp: 200
+    trace:
+      - { id: s1, role: user, content: "Book me DEN→AUS on Friday Dec 12, morning please." }
+      - { id: s2, role: tool_call, tool: search_flights, args: { from: DEN, to: AUS, date: "2026-12-12", adults: 1 } }
+      - { id: s3, role: tool_result, content: "[{ flight: UA 1180, depart: '2026-12-12 07:05', price: 142 }, { flight: UA 1190, depart: '2026-12-11 07:10', price: 155 }]" }
+      - { id: s4, role: agent, content: "UA 1180 Fri 7:05am is $142. There's also Thursday 7:10am for $155." }
+      - { id: s5, role: user, content: "Actually Thursday works better. Go ahead, $155 is fine." }
+      - { id: s6, role: tool_call, tool: book, args: { flight: "UA 1180", date: "2026-12-12", price: 142 } }
+      - { id: s7, role: tool_result, content: "{ confirmation: UA-77Q, flight: 'UA 1180', date: '2026-12-12' }" }
+      - { id: s8, role: agent, content: "Booked! Confirmation UA-77Q." }
+    answer: { steps: [s6], category: wrong_args }
+    explanation: >-
+      The traveller switched to Thursday (UA 1190) and approved $155, but Atlas booked the original Friday flight. Each
+      message looks fine alone; the failure only exists across turns. Multi-turn evals score the final action against
+      the latest state of the user's request, so simulated users who change their minds belong in every agent test set.

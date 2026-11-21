@@ -1,0 +1,117 @@
+id: rag-knowledge-base
+title: Sage — Company Knowledge-Base Assistant (RAG)
+domain: RAG / knowledge base
+icon: "📚"
+summary: An internal assistant that answers employee questions by retrieving and citing company documents.
+agent:
+  name: Sage
+  description: Answers employees' questions about policies, benefits and engineering docs using retrieval over the company wiki.
+  tools: [search_kb, get_document, escalate_to_human]
+  policies:
+    - Answer only from retrieved documents and cite them.
+    - If the answer isn't in the documents, say so and offer to escalate.
+    - Respect document access levels; never reveal restricted documents to users without access.
+
+challenges:
+  - id: rag-knowledge-base-b1
+    tier: beginner
+    type: spot_failure
+    title: Generous PTO
+    brief: An employee asks about vacation days. Find the one step where Sage goes wrong, and name the failure.
+    concepts: [faithfulness]
+    xp: 100
+    trace:
+      - { id: s1, role: user, content: "How many PTO days do I get after 3 years?" }
+      - { id: s2, role: tool_call, tool: search_kb, args: { query: "PTO days by tenure" } }
+      - { id: s3, role: tool_result, content: "[{ doc: 'Benefits Guide 2026 §3', text: '0–2 years: 15 days. 3–5 years: 20 days. 6+ years: 25 days.' }]" }
+      - { id: s4, role: agent, content: "After 3 years you get 25 PTO days per year (Benefits Guide 2026 §3)." }
+    answer: { steps: [s4], category: hallucination }
+    explanation: >-
+      The document says 20 days for 3–5 years; 25 is the 6+ tier. Sage even cited the right source, which makes the error
+      more convincing. A citation is not proof of faithfulness: judges must check that the claim matches the cited text.
+
+  - id: rag-knowledge-base-b2
+    tier: beginner
+    type: mcq
+    title: What is faithfulness?
+    brief: The core RAG metric.
+    concepts: [faithfulness, reference-based]
+    xp: 75
+    question: Which description matches "faithfulness" (groundedness) for a RAG answer?
+    options:
+      - { id: a, text: "The answer is polite and on-brand" }
+      - { id: b, text: "Every claim in the answer is supported by the retrieved context" }
+      - { id: c, text: "The answer matches what a domain expert would say" }
+      - { id: d, text: "The answer quotes at least one document" }
+    answer: b
+    explanation: >-
+      Faithfulness asks: is each statement backed by the retrieved text? It doesn't need a reference answer, so you can
+      run it on live traffic. Correctness against an expert answer is a different (reference-based) metric, and quoting
+      a document doesn't guarantee the claims match it.
+
+  - id: rag-knowledge-base-p1
+    tier: practitioner
+    type: spot_failure
+    title: Need to know
+    brief: An engineer asks a salary question. Find the step where Sage goes wrong, and name the failure.
+    concepts: [pii, policy-compliance]
+    xp: 175
+    trace:
+      - { id: s1, role: user, content: "What's the salary band for staff engineers? (user: alex@corp, role: engineer)" }
+      - { id: s2, role: tool_call, tool: search_kb, args: { query: "staff engineer salary band" } }
+      - { id: s3, role: tool_result, content: "[{ doc: 'Exec Comp Review Q4 (RESTRICTED: hr-leadership)', text: 'Staff eng band $210–260k; proposed cuts for 14 named staff...' }]" }
+      - { id: s4, role: agent, content: "Staff engineer band is $210–260k. Note: leadership is proposing cuts for 14 staff engineers (Exec Comp Review Q4)." }
+    answer: { steps: [s4], category: privacy_leak }
+    explanation: >-
+      The only document found is restricted to HR leadership, and the user is an engineer. Sage should have said it
+      couldn't share it. Retrieval returned it, but generation must still enforce access. RAG eval sets need test users
+      with different permission levels, not just different questions.
+
+  - id: rag-knowledge-base-p2
+    tier: practitioner
+    type: judge_builder
+    title: Build the RAG answer judge
+    brief: Knowledge managers labelled 8 Sage answers. Build a judge that agrees with them at least 90% of the time.
+    concepts: [faithfulness, llm-as-judge, human-labels]
+    xp: 250
+    question: Which checks should your judge require?
+    target_agreement: 0.9
+    criteria:
+      - { id: faithful, text: "Every claim is supported by the retrieved documents" }
+      - { id: cites, text: "Cites the source document" }
+      - { id: bullets, text: "Formatted as bullet points" }
+      - { id: confident, text: "Sounds confident (no hedging)" }
+      - { id: short, text: "Under 50 words" }
+    samples:
+      - { id: x1, output: "• 20 PTO days for 3–5 years of tenure\n• Unused days roll over up to 5 (Benefits Guide §3)", checks: { faithful: true, cites: true, bullets: true, confident: true, short: true }, human_label: pass }
+      - { id: x2, output: "According to the Benefits Guide 2026, section 3, employees with three to five years of tenure receive twenty days of paid time off per year. I believe up to five unused days can roll over, but please confirm with HR if you plan to rely on that, as the rollover rules changed this year and the guide notes exceptions for some regions.", checks: { faithful: true, cites: true, bullets: false, confident: false, short: false }, human_label: pass }
+      - { id: x3, output: "• 25 PTO days after 3 years\n• Unlimited rollover (Benefits Guide §3)", checks: { faithful: false, cites: true, bullets: true, confident: true, short: true }, human_label: fail, note: Both numbers contradict the cited guide. }
+      - { id: x4, output: "• 20 PTO days for 3–5 years\n• Up to 5 days roll over", checks: { faithful: true, cites: false, bullets: true, confident: true, short: true }, human_label: fail, note: No source, so employees can't verify. }
+      - { id: x5, output: "• 20 PTO days at 3–5 years of tenure (Benefits Guide §3)\n• Up to 5 unused days roll over to next year\n• Requests over 10 consecutive days need manager approval 30 days ahead (Leave Policy §2)", checks: { faithful: true, cites: true, bullets: true, confident: true, short: false }, human_label: pass }
+      - { id: x6, output: "I think it's 20 days at your tenure, per the Benefits Guide §3.", checks: { faithful: true, cites: true, bullets: false, confident: false, short: true }, human_label: pass }
+      - { id: x7, output: "• Everyone gets 30 days\n• Ask your manager for more", checks: { faithful: false, cites: false, bullets: true, confident: true, short: true }, human_label: fail }
+      - { id: x8, output: "• 20 PTO days for 3–5 years (Benefits Guide §3).", checks: { faithful: true, cites: true, bullets: true, confident: true, short: true }, human_label: pass }
+    answer: { criteria: [faithful, cites], rule: all }
+    explanation: >-
+      Knowledge managers cared about grounded claims and a source employees can check. Formatting, confidence and length
+      varied among passing answers. Rewarding a confident tone is especially risky in RAG: it pushes the system to
+      sound sure even when retrieval was weak.
+
+  - id: rag-knowledge-base-a1
+    tier: advanced
+    type: mcq
+    title: Retriever or generator?
+    brief: Sage gives a wrong answer about the travel policy. You need to know which part to fix.
+    concepts: [context-recall, faithfulness]
+    xp: 200
+    question: "On 200 failed questions: faithfulness is 97% (answers match what was retrieved), but context recall is 54% (the needed document was retrieved only about half the time). Where should you invest first?"
+    options:
+      - { id: a, text: "The generator prompt: tell Sage to be more careful" }
+      - { id: b, text: "Retrieval: chunking, embeddings, query rewriting or hybrid search. The generator is faithfully answering from the wrong context" }
+      - { id: c, text: "Switch to a bigger model for generation" }
+      - { id: d, text: "Add more documents to the knowledge base" }
+    answer: b
+    explanation: >-
+      Splitting RAG evals into retrieval metrics (context recall and precision) and generation metrics (faithfulness,
+      relevance) tells you which component failed. High faithfulness plus low recall means the generator is doing its job
+      on bad inputs, so prompt or model changes won't help much. Fix retrieval first.

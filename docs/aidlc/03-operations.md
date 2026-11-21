@@ -22,4 +22,10 @@
 
 ## Privacy
 
-No analytics, no cookies, no accounts. Progress is stored only in the player's browser (`localStorage`).
+No analytics. Progress is stored in the player's browser (`localStorage`). Players can optionally sign in with GitHub (Supabase Auth) to sync across devices and appear on the leaderboard; only GitHub username, avatar, XP and per-challenge best scores are stored, protected by row-level security, and players can hide themselves from the board.
+
+## Optional backend (Supabase)
+
+- Schema: `supabase/migrations/0001_players.sql` (table `players`, trigger that takes the username from the GitHub login, RLS own-row policies, `get_leaderboard` RPC).
+- Config: `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` (browser-safe) in Vercel env vars. Without them, sign-in and the board are hidden.
+- One-time owner setup: GitHub OAuth app → Supabase Auth GitHub provider; Site URL and redirect URLs in Supabase Auth settings.

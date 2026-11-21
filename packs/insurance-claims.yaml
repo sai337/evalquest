@@ -1,0 +1,121 @@
+id: insurance-claims
+title: Clara — Insurance Claims Assistant
+domain: Insurance
+icon: "🛡️"
+summary: A home-insurance agent that checks coverage, reviews damage photos and approves or routes claims.
+agent:
+  name: Clara
+  description: Helps homeowners file and track property claims. Checks the policy, reviews evidence and approves small covered claims.
+  tools: [get_policy, get_claim, assess_damage_photos, request_documents, approve_claim, flag_for_fraud_review, escalate_to_adjuster]
+  policies:
+    - Check the policy is active and the peril is covered before approving anything.
+    - Claims over $10,000 go to a human adjuster.
+    - Never tell a claimant their claim is under fraud review; say it is "under standard review".
+    - If documents are missing, request them instead of denying.
+
+challenges:
+  - id: insurance-claims-b1
+    tier: beginner
+    type: spot_failure
+    title: The friendly deductible
+    brief: A homeowner asks what they'll pay. Find the one step where Clara goes wrong, and name the failure.
+    concepts: [faithfulness]
+    hint: Compare every number Clara says with what the tool returned.
+    xp: 100
+    trace:
+      - { id: s1, role: user, content: "A tree fell on my garage. How much is my deductible?" }
+      - { id: s2, role: tool_call, tool: get_policy, args: { policy_id: HO-4410 } }
+      - { id: s3, role: tool_result, content: "{ status: active, deductible: 1000, perils_covered: [wind, falling_objects, fire], exclusions: [flood] }" }
+      - { id: s4, role: agent, content: "Good news, falling trees are covered! Your deductible is just $250." }
+    answer: { steps: [s4], category: hallucination }
+    explanation: >-
+      Coverage is right, but the deductible is $1,000, not $250. One wrong number in an otherwise correct answer is the
+      most dangerous kind of hallucination: it sounds trustworthy and the customer will plan around it. Faithfulness
+      checks must verify every number against the source, not just the overall gist.
+
+  - id: insurance-claims-b2
+    tier: beginner
+    type: mcq
+    title: Where do the test cases come from?
+    brief: You need an eval dataset for Clara's approve/route decisions.
+    concepts: [golden-dataset, human-labels]
+    xp: 75
+    question: What's the best source for Clara's first golden dataset?
+    options:
+      - { id: a, text: "200 claims invented by a language model" }
+      - { id: b, text: "Historical claims with the human adjuster's final decision, deliberately including exclusions, amounts near $10,000 and missing documents" }
+      - { id: c, text: "The 50 most recent claims, all of which were approved" }
+      - { id: d, text: "The policy wording documents themselves" }
+    answer: b
+    explanation: >-
+      Real past cases with expert decisions are the strongest ground truth, and you must over-sample the tricky
+      boundaries. A set where every claim was approved can't tell a "rubber stamp" agent from a careful one. Synthetic
+      cases are useful later for gaps, but not as your only truth.
+
+  - id: insurance-claims-p1
+    tier: practitioner
+    type: spot_failure
+    title: Too honest
+    brief: A claimant asks why their claim is taking so long. Find the step where Clara goes wrong, and name the failure.
+    concepts: [policy-compliance]
+    xp: 150
+    trace:
+      - { id: s1, role: user, content: "It's been 3 weeks. What's happening with claim CL-881?" }
+      - { id: s2, role: tool_call, tool: get_claim, args: { claim_id: CL-881 } }
+      - { id: s3, role: tool_result, content: "{ status: on_hold, internal_flag: fraud_review, reason: 'photo metadata mismatch' }" }
+      - { id: s4, role: agent, content: "Your claim is on hold because our fraud team thinks your photos may have been edited. They'll decide soon." }
+    answer: { steps: [s4], category: policy_violation }
+    explanation: >-
+      Internal fraud flags must never be disclosed: it can tip off real fraud and wrongly accuses honest customers.
+      The tool result contained internal-only fields, and the agent repeated them. Evals for customer-facing agents need
+      checks for "internal data echoed to the customer", not just for wrong facts.
+
+  - id: insurance-claims-p2
+    tier: practitioner
+    type: judge_builder
+    title: Build the decision-letter judge
+    brief: >-
+      Senior adjusters labelled 8 claim-decision letters. Build a judge that agrees with them at least 90% of the time.
+    concepts: [llm-as-judge, human-labels, rubric]
+    xp: 250
+    question: Which checks should your judge require?
+    target_agreement: 0.9
+    criteria:
+      - { id: clause, text: "Cites the policy clause behind the decision" }
+      - { id: payout, text: "Payout equals approved damage minus deductible" }
+      - { id: empathy, text: "Opens with an empathy statement" }
+      - { id: short, text: "Under 80 words" }
+      - { id: steps, text: "Lists next steps as bullets" }
+    samples:
+      - { id: x1, output: "We're sorry about the storm damage. Under section 4.2 (wind), we approved $6,200 less your $1,000 deductible: $5,200 is on its way. • Keep receipts • Book repairs", checks: { clause: true, payout: true, empathy: true, short: true, steps: true }, human_label: pass }
+      - { id: x2, output: "Decision for claim CL-102: covered under section 4.5 (falling objects). Approved damage $3,400, deductible $500, payment $2,900 issued today by direct deposit. Repairs may begin immediately; contact your adjuster if the contractor finds additional damage behind the drywall, as that can be added as a supplement to this claim.", checks: { clause: true, payout: true, empathy: false, short: false, steps: false }, human_label: pass }
+      - { id: x3, output: "So sorry to hear this! Under section 4.2 we approved $4,000. Your payment of $4,000 is on its way. • Book repairs", checks: { clause: true, payout: false, empathy: true, short: true, steps: true }, human_label: fail, note: Forgot to subtract the $1,000 deductible. }
+      - { id: x4, output: "We're really sorry. Your claim is approved and $2,300 ($3,300 less $1,000 deductible) will arrive in 5 days. • Keep receipts", checks: { clause: false, payout: true, empathy: true, short: true, steps: true }, human_label: fail, note: No policy basis given for the decision. }
+      - { id: x5, output: "We're sorry for the trouble with your roof. Under section 4.2 (wind) we approved $8,000 of damage. After your $1,000 deductible, $7,000 has been paid. • Get two contractor quotes • Send invoices to claims@ • Ask us about temporary housing if the home is unsafe to stay in", checks: { clause: true, payout: true, empathy: true, short: false, steps: true }, human_label: pass }
+      - { id: x6, output: "Claim CL-310 approved under section 4.7 (fire). Payment: $12,500 approved minus $2,500 deductible = $10,000, sent today.", checks: { clause: true, payout: true, empathy: false, short: true, steps: false }, human_label: pass }
+      - { id: x7, output: "We're so sorry! Your claim is approved for the full $9,000. • Book repairs • Keep receipts", checks: { clause: false, payout: false, empathy: true, short: true, steps: true }, human_label: fail }
+      - { id: x8, output: "We're sorry about the hail. Section 4.2 covers it: $2,000 approved, less your $500 deductible, so $1,500 is on its way.", checks: { clause: true, payout: true, empathy: true, short: true, steps: false }, human_label: pass }
+    answer: { criteria: [clause, payout], rule: all }
+    explanation: >-
+      Adjusters failed letters that got the money wrong or gave no policy basis (a regulatory requirement). Empathy,
+      brevity and bullet formatting vary across letters they happily passed. If you require them, your judge raises
+      false alarms on good letters, and people stop trusting it.
+
+  - id: insurance-claims-a1
+    tier: advanced
+    type: mcq
+    title: Same claim, five answers
+    brief: You run Clara 5 times on the same borderline claim. It approves 3 times and routes to an adjuster twice.
+    concepts: [pass-k]
+    xp: 175
+    question: Clara gets the right decision at least once in 5 runs on 96% of cases (pass@5), but only 61% of cases are right on all 5 runs (pass^5). What should you conclude?
+    options:
+      - { id: a, text: "It's 96% accurate, ship it" }
+      - { id: b, text: "It is inconsistent: for an agent that decides on its own, pass^k is the number that matters. Investigate the borderline cases and reduce variance before shipping" }
+      - { id: c, text: "Average the two numbers and report 78.5%" }
+      - { id: d, text: "Set temperature to zero and stop measuring consistency" }
+    answer: b
+    explanation: >-
+      pass@k flatters systems a human can retry. A claims agent makes one decision per customer, so it must be right
+      every time: measure pass^k (all k runs correct). A big gap between pass@k and pass^k is a reliability bug.
+      Temperature zero hides variance in your tests but doesn't remove it from inputs that differ slightly in production.

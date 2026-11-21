@@ -76,3 +76,16 @@ export function badges(packs: Pack[], p: Progress) {
   }
   return list;
 }
+
+const validEntry = (v: unknown): v is Progress['solved'][string] =>
+  !!v && typeof v === 'object' && typeof (v as { score: unknown }).score === 'number' &&
+  (v as { score: number }).score > 0 && (v as { score: number }).score <= 1 &&
+  typeof (v as { xp: unknown }).xp === 'number' && (v as { xp: number }).xp >= 0 && (v as { xp: number }).xp <= 1000;
+
+/** Best score per challenge from two progress records (e.g. this browser + the cloud). */
+export function mergeProgress(a: Progress, b: Progress): Progress {
+  const solved: Progress['solved'] = {};
+  for (const src of [a.solved ?? {}, b.solved ?? {}])
+    for (const [id, v] of Object.entries(src)) if (validEntry(v) && (!solved[id] || v.score > solved[id].score)) solved[id] = v;
+  return { solved };
+}

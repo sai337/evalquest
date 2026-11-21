@@ -1,13 +1,31 @@
+import { useState } from 'react';
 import type { Pack } from '../engine/schema';
+import { dailyChallenge } from '../engine/play';
 import { badges, rankFor, tierProgress, totalXp, type Progress } from '../engine/progress';
 import { TIERS, TIER_INFO } from '../engine/taxonomy';
 
-export function Home({ packs, progress }: { packs: Pack[]; progress: Progress }) {
+const INTRO_KEY = 'evalquest.intro.dismissed';
+const SITE = 'https://evalquest-livid.vercel.app';
+
+export function Home({ packs, progress, onReset }: { packs: Pack[]; progress: Progress; onReset: () => void }) {
+  const [intro, setIntro] = useState(() => {
+    try { return !localStorage.getItem(INTRO_KEY); } catch { return true; }
+  });
+  const [copied, setCopied] = useState(false);
+  const all = packs.flatMap((p) => p.challenges.map((c) => ({ ...c, pack: p })));
+  const daily = dailyChallenge(all, new Date().toISOString().slice(0, 10));
   const xp = totalXp(progress);
   const rank = rankFor(xp);
   const tiers = tierProgress(packs, progress);
   const pct = rank.next ? ((xp - rank.xp) / (rank.next.xp - rank.xp)) * 100 : 100;
   const firstOpen = packs.flatMap((p) => p.challenges).find((c) => progress.solved[c.id]?.score !== 1);
+  const share = async () => {
+    const text = `I'm "${rank.name}" (${xp} XP) on EvalQuest — a free game for learning LLM & AI-agent evals. ${SITE}`;
+    try {
+      if (navigator.share) await navigator.share({ text });
+      else { await navigator.clipboard.writeText(text); setCopied(true); }
+    } catch { /* cancelled */ }
+  };
 
   return (
     <>
@@ -18,7 +36,7 @@ export function Home({ packs, progress }: { packs: Pack[]; progress: Progress })
             Become the person who knows <span className="grad">whether the AI actually works.</span>
           </h1>
           <p className="lede">
-            Judge real-looking traces from agents that sell, bank and support. Spot the failure, pick the metric, build a
+            Judge real-looking traces from agents that sell, bank, book trips, write code, hire and fight outages. Spot the failure, pick the metric, build a
             judge, and prove it agrees with humans. Beginner to SME, free, in your browser.
           </p>
           {firstOpen && (
@@ -36,8 +54,34 @@ export function Home({ packs, progress }: { packs: Pack[]; progress: Progress })
           <div className="muted small">
             {xp} XP {rank.next && `· ${rank.next.xp - xp} to ${rank.next.name}`}
           </div>
+          <div className="rank-actions">
+            <button className="btn small-btn" onClick={share}>{copied ? 'Copied ✓' : 'Share my rank'}</button>
+            {xp > 0 && <button className="linkbtn small" onClick={onReset}>Reset</button>}
+          </div>
         </div>
       </section>
+
+      {intro && (
+        <div className="panel intro">
+          <b>How to play (30 seconds)</b>
+          <ol className="small">
+            <li>Pick an agent below. Each one has its own tools and policies, like a real product.</li>
+            <li>🔎 <b>Trace Detective:</b> read what the agent did step by step, tap where it went wrong, name the failure.</li>
+            <li>🧭 <b>Eval Call:</b> choose the eval that would actually catch the problem.</li>
+            <li>⚖️ <b>Judge Builder:</b> pick checks for an automated judge, run it on human-labelled samples, and tune until it agrees with the humans.</li>
+            <li>Every answer explains the <i>why</i>. Stuck? Hints cost 25% of the XP.</li>
+          </ol>
+          <button className="btn" onClick={() => { setIntro(false); try { localStorage.setItem(INTRO_KEY, '1'); } catch { /* ignore */ } }}>Got it</button>
+        </div>
+      )}
+
+      {daily && (
+        <a className="panel daily" href={`#/c/${daily.id}`}>
+          <span className="eyebrow">Today's puzzle</span>
+          <b>{daily.pack.icon} {daily.title}</b>
+          <span className="muted small">{daily.pack.domain} · {TIER_INFO[daily.tier].label} · {daily.xp} XP {progress.solved[daily.id]?.score === 1 ? '· ✅ solved' : ''}</span>
+        </a>
+      )}
 
       <h2>The ladder</h2>
       <div className="ladder">
@@ -46,14 +90,14 @@ export function Home({ packs, progress }: { packs: Pack[]; progress: Progress })
           const info = TIER_INFO[t];
           const locked = tp.total === 0;
           return (
-            <div key={t} className={`rung ${locked ? 'locked' : ''}`} style={{ borderColor: info.color }}>
+            <a key={t} href={`#/tier/${t}`} className={`rung ${locked ? 'locked' : ''}`} style={{ borderColor: info.color }}>
               <div className="rung-n" style={{ background: info.color }}>{i + 1}</div>
               <div>
                 <b>{info.label}</b>
                 <div className="muted small">{info.blurb}</div>
               </div>
-              <div className="small rung-p">{locked ? 'coming soon' : `${tp.done}/${tp.total}`}</div>
-            </div>
+              <div className="small rung-p">{locked ? 'coming soon' : `${tp.done}/${tp.total} →`}</div>
+            </a>
           );
         })}
       </div>

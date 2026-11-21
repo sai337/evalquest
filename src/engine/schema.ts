@@ -19,6 +19,7 @@ const base = {
   explanation: z.string().min(40, 'explanations must teach the why (40+ chars)'),
   xp: z.number().int().positive().default(100),
   concepts: z.array(z.string()).default([]),
+  hint: z.string().optional(),
 };
 
 export const SpotFailureSchema = z.object({

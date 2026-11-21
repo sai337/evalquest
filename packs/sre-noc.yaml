@@ -1,0 +1,125 @@
+id: sre-noc
+title: Sentinel — SRE / NOC Incident Agent
+domain: SRE & NOC
+icon: "🚨"
+summary: An operations agent that triages alerts, reads metrics and logs, and takes remediation actions.
+agent:
+  name: Sentinel
+  description: Triages production alerts for a streaming platform, investigates with metrics and logs, and runs approved remediations.
+  tools: [get_alerts, query_metrics, get_logs, restart_service, scale_deployment, rollback_deploy, page_oncall, post_status_update]
+  policies:
+    - For SEV1 incidents, page the human on-call before taking any change action.
+    - Investigate read-only first; every change must match a runbook.
+    - Don't repeat a remediation that already failed; escalate instead.
+    - Status updates must state customer impact and when the next update will be.
+
+challenges:
+  - id: sre-noc-b1
+    tier: beginner
+    type: spot_failure
+    title: Hero mode
+    brief: Checkout is down. Find the one step where Sentinel goes wrong, and name the failure.
+    concepts: [escalation, trajectory]
+    xp: 100
+    trace:
+      - { id: s1, role: system, content: "ALERT SEV1: checkout error rate 38% (threshold 2%) since 14:02" }
+      - { id: s2, role: tool_call, tool: query_metrics, args: { service: checkout, window: 30m } }
+      - { id: s3, role: tool_result, content: "{ errors_spike_at: '14:01', deploy_at: '14:00', version: 'v412' }" }
+      - { id: s4, role: tool_call, tool: rollback_deploy, args: { service: checkout, to: v411 } }
+      - { id: s5, role: tool_result, content: "{ status: rolled_back, error_rate_now: 0.4% }" }
+      - { id: s6, role: agent, content: "Rolled back checkout to v411. Error rate is back to normal." }
+    answer: { steps: [s4], category: missed_escalation }
+    explanation: >-
+      The rollback was probably the right fix, and it worked. But on a SEV1, policy says page the on-call human before
+      any change, and no one was ever paged. "It worked this time" is exactly how unsafe habits get rewarded. Trajectory
+      evals check the order of actions, not just the outcome.
+
+  - id: sre-noc-b2
+    tier: beginner
+    type: mcq
+    title: Scoring an incident agent
+    brief: Pick the best scorecard for Sentinel.
+    concepts: [trajectory, severity]
+    xp: 75
+    question: Which scorecard best evaluates Sentinel on replayed past incidents?
+    options:
+      - { id: a, text: "Number of tools called per incident (more = more thorough)" }
+      - { id: b, text: "Time to mitigate, whether the root cause matches the postmortem, and a hard gate of zero unsafe actions (unpaged SEV1 changes, off-runbook changes)" }
+      - { id: c, text: "How confident Sentinel's final message sounds" }
+      - { id: d, text: "Only whether the alert cleared" }
+    answer: b
+    explanation: >-
+      Ops agents need speed, correctness and safety. The alert clearing alone rewards lucky or dangerous actions, so
+      unsafe actions get their own zero-tolerance gate, scored on the trajectory.
+
+  - id: sre-noc-p1
+    tier: practitioner
+    type: spot_failure
+    title: Turn it off and on again (and again)
+    brief: A pod keeps crashing. Select every step where Sentinel goes wrong (there are two), and name the failure.
+    concepts: [trajectory]
+    xp: 175
+    trace:
+      - { id: s1, role: system, content: "ALERT SEV3: recommendations pod CrashLoopBackOff" }
+      - { id: s2, role: tool_call, tool: get_logs, args: { service: recommendations, tail: 50 } }
+      - { id: s3, role: tool_result, content: "FATAL OutOfMemoryError: heap 512Mi exceeded loading model v9 (needs ~900Mi)" }
+      - { id: s4, role: tool_call, tool: restart_service, args: { service: recommendations } }
+      - { id: s5, role: tool_result, content: "{ status: CrashLoopBackOff, reason: OOMKilled }" }
+      - { id: s6, role: tool_call, tool: restart_service, args: { service: recommendations } }
+      - { id: s7, role: tool_result, content: "{ status: CrashLoopBackOff, reason: OOMKilled }" }
+      - { id: s8, role: tool_call, tool: restart_service, args: { service: recommendations } }
+      - { id: s9, role: tool_result, content: "{ status: CrashLoopBackOff, reason: OOMKilled }" }
+    answer: { steps: [s6, s8], category: loop_or_inefficiency }
+    explanation: >-
+      The logs already explained the cause (the model needs more memory). One restart to confirm is defensible; repeating
+      a remediation that just failed is a loop. Sentinel should have escalated or followed the OOM runbook. Count repeated
+      identical failing actions as a trajectory metric.
+
+  - id: sre-noc-p2
+    tier: practitioner
+    type: judge_builder
+    title: Build the status-update judge
+    brief: The incident commander labelled 8 customer status updates. Build a judge that agrees at least 90% of the time.
+    concepts: [rubric, human-labels]
+    xp: 250
+    question: Which checks should your judge require?
+    target_agreement: 0.9
+    criteria:
+      - { id: impact, text: "States customer impact (who and what is affected)" }
+      - { id: next, text: "Gives the time of the next update" }
+      - { id: rootcause, text: "Includes technical root-cause detail" }
+      - { id: apology, text: "Apologises" }
+      - { id: short, text: "Under 50 words" }
+    samples:
+      - { id: x1, output: "Sorry: some viewers in US-East can't start streams. Cause: a bad config push to the edge CDN. Next update 15:30 MT.", checks: { impact: true, next: true, rootcause: true, apology: true, short: true }, human_label: pass }
+      - { id: x2, output: "Some viewers in the US-East region cannot start new streams; streams already playing are unaffected. Engineers are actively working on mitigation and are evaluating several options to restore service as quickly as possible while protecting data integrity. We will post the next update at 15:30 MT or sooner if the situation changes.", checks: { impact: true, next: true, rootcause: false, apology: false, short: false }, human_label: pass }
+      - { id: x3, output: "We're sorry. US-East viewers can't start streams due to CDN edge config drift in pool b-7. We're on it.", checks: { impact: true, next: false, rootcause: true, apology: true, short: true }, human_label: fail, note: No next-update time, so customers keep refreshing. }
+      - { id: x4, output: "Apologies: edge config v88 failed health checks on pool b-7; rolling back now. Next update 15:30 MT.", checks: { impact: false, next: true, rootcause: true, apology: true, short: true }, human_label: fail, note: Customers can't tell if they're affected. }
+      - { id: x5, output: "We're sorry. Some US-East viewers can't start new streams. A configuration change to our delivery network caused it and we are rolling it back region by region, verifying each step. Playback already in progress is not affected. Next update at 15:30 MT.", checks: { impact: true, next: true, rootcause: true, apology: true, short: false }, human_label: pass }
+      - { id: x6, output: "US-East viewers can't start new streams; current streams unaffected. Next update 15:30 MT.", checks: { impact: true, next: true, rootcause: false, apology: false, short: true }, human_label: pass }
+      - { id: x7, output: "So sorry! Edge pool b-7 config drift detected, investigating.", checks: { impact: false, next: false, rootcause: true, apology: true, short: true }, human_label: fail }
+      - { id: x8, output: "Sorry: US-East viewers can't start streams due to a CDN config change. Next update 15:30 MT.", checks: { impact: true, next: true, rootcause: true, apology: true, short: true }, human_label: pass }
+    answer: { criteria: [impact, next], rule: all }
+    explanation: >-
+      Customers need to know whether they're affected and when they'll hear more. Root-cause jargon and apologies were
+      optional to the incident commander. Several excellent updates had neither, so a judge requiring them would cry wolf
+      during an incident, when attention is scarcest.
+
+  - id: sre-noc-a1
+    tier: advanced
+    type: mcq
+    title: The runbook that rewrites itself
+    brief: Sentinel now learns. After every incident it updates its own runbooks from what worked.
+    concepts: [self-improvement, held-out, regression-suite]
+    xp: 200
+    question: How do you make sure each self-written runbook update is a real improvement before it goes live?
+    options:
+      - { id: a, text: "Trust it: the update came from a real incident, so it must be better" }
+      - { id: b, text: "Replay a held-out set of past incidents in a sandbox with the old and new runbook, require improvement with no regressions on safety gates, and have a human review the diff before merge" }
+      - { id: c, text: "Re-run only the incident that triggered the update and check it now passes" }
+      - { id: d, text: "Let it update freely, but roll back if the next real incident goes badly" }
+    answer: b
+    explanation: >-
+      A self-improving agent is an eval loop with memory, and the eval is what keeps it honest. Testing only on the
+      triggering incident measures memorisation (overfitting), not improvement. Held-out replay plus safety gates plus
+      human review turns "learns from mistakes" into something you can actually trust in production.

@@ -15,7 +15,7 @@ A static web game that teaches LLM/agent evals from beginner to SME. Content liv
 3. Every challenge needs an `explanation` that teaches the *why*, not just the answer.
 4. Use only failure codes from `src/engine/taxonomy.ts`.
 5. Judge Builder challenges: the reference judge must reach `target_agreement`, and at least one tempting wrong judge should fall short.
-6. No backend, no analytics, no API keys in the default build.
+6. No analytics, ever. The game must work fully offline with no backend. Optional cloud features (GitHub sign-in, sync, leaderboard) use Supabase only when `VITE_SUPABASE_*` env vars are set; schema changes go in `supabase/migrations/`.
 7. Keep dependencies minimal and mainstream; new dependencies need a line in `docs/DECISIONS.md`.
 8. Git: commits are authored as `sai337 <sai.devop@gmail.com>`. No AI co-author trailers or session links in commits, PRs or files.
 9. Update `STATUS.md` at each milestone.
