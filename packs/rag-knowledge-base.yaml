@@ -128,3 +128,28 @@ challenges:
       relevance) tells you which component failed. High faithfulness plus low recall means the generator is doing its job
       on bad inputs, so prompt or model changes won't help much. Fix retrieval first.
       Hypothetical scenario built for practice.
+
+  - id: rag-knowledge-base-p3
+    tier: practitioner
+    type: eval_bug
+    provenance: documented
+    source: "Demystifying evals for AI agents (Anthropic)"
+    title: Wrong by six decimals
+    brief: Sage's numeric answers keep failing the eval, but the transcripts look right. Find the buggy line in the grader and classify the bug.
+    concepts: [grader-bugs, reference-based]
+    xp: 175
+    artifact: grader
+    language: python
+    code_lines:
+      - "def grade(sample, answer):"
+      - "    expected = str(sample['expected'])      # e.g. '96.124991'"
+      - "    got = answer.strip()                     # e.g. '96.12'"
+      - "    return got == expected"
+      - ""
+      - "score = sum(grade(s, a) for s, a in results) / len(results)"
+    answer: { line: 4, bug_type: rigid_match }
+    explanation: >-
+      An exact string comparison marks "96.12" wrong against "96.124991", even when the question asked for two decimals.
+      Compare numbers with a stated tolerance (or parse and round), and read failing transcripts before trusting a low
+      score. Anthropic describes this exact pattern: a benchmark grader that rejected 96.12 for 96.124991 and understated
+      a model's real ability.

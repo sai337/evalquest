@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest';
 import { PackSchema, type JudgeBuilder, type Pack } from '../src/engine/schema';
 import { rawPackFiles } from '../src/engine/packs';
-import { scoreJudge } from '../src/engine/graders';
+import { firstDivergence, scoreJudge } from '../src/engine/graders';
 import { GLOSSARY } from '../src/engine/glossary';
 
 const files = Object.entries(rawPackFiles);
@@ -100,6 +100,32 @@ describe('content evals', () => {
         expect(everything.passed, `${c.id}: ticking every box wins — add a tempting check that humans don't care about`).toBe(false);
       }
     });
+  });
+
+  it('Twin Trace: same task, declared tools, and the answer is the computed first divergence', () => {
+    for (const { pack } of parsed)
+      for (const c of pack.challenges) {
+        if (c.type !== 'twin_trace') continue;
+        for (const t of [c.trace_a, c.trace_b]) {
+          const ids = t.map((s) => s.id);
+          expect(new Set(ids).size, `${c.id}: duplicate step ids`).toBe(ids.length);
+          for (const s of t) if (s.role === 'tool_call') expect(pack.agent.tools, `${c.id}: tool ${s.tool} not declared`).toContain(s.tool);
+        }
+        expect(c.trace_b[0].content, `${c.id}: both runs must start from the same task`).toBe(c.trace_a[0].content);
+        const i = firstDivergence(c.trace_a, c.trace_b);
+        expect(i, `${c.id}: the traces never diverge`).toBeGreaterThan(0);
+        expect(c.answer.step, `${c.id}: the first divergence is ${c.trace_b[i]?.id}`).toBe(c.trace_b[i]?.id);
+      }
+  });
+
+  it('Spot the Eval Bug: the answer line exists and is not blank', () => {
+    for (const { pack } of parsed)
+      for (const c of pack.challenges) {
+        if (c.type !== 'eval_bug') continue;
+        const line = c.code_lines[c.answer.line - 1];
+        expect(line, `${c.id}: answer line ${c.answer.line} is out of range`).toBeDefined();
+        expect(line.trim().length, `${c.id}: answer line is blank`).toBeGreaterThan(0);
+      }
   });
 
   it('provenance: every pack lists at least one https source', () => {

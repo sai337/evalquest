@@ -2,7 +2,7 @@ import type { Pack } from '../engine/schema';
 import type { Progress } from '../engine/progress';
 import { TIERS, TIER_INFO } from '../engine/taxonomy';
 
-export const TYPE_LABEL = { spot_failure: '🔎 Trace Detective', mcq: '🧭 Eval Call', judge_builder: '⚖️ Judge Builder' } as const;
+export const TYPE_LABEL = { spot_failure: '🔎 Trace Detective', mcq: '🧭 Eval Call', judge_builder: '⚖️ Judge Builder', twin_trace: '👯 Twin Trace', eval_bug: '🐞 Spot the Eval Bug' } as const;
 
 export function PackView({ pack, progress }: { pack: Pack; progress: Progress }) {
   return (

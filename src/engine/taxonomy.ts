@@ -19,6 +19,25 @@ export const FAILURES = {
 export type FailureCode = keyof typeof FAILURES;
 export const FAILURE_CODES = Object.keys(FAILURES) as [FailureCode, ...FailureCode[]];
 
+/** Spot the Eval Bug: the bug classes the mechanic teaches. */
+export const EVAL_BUGS = {
+  leakage: { label: 'Leakage', hint: 'The answer, the label or test data reaches the system or the judge being graded' },
+  rigid_match: { label: 'Rigid match', hint: 'Exact string or path matching fails valid answers that differ in form (rounding, order, an alternative route)' },
+  wrong_denominator: { label: 'Wrong denominator', hint: 'The rate is divided by the wrong count (attempts vs tasks, only the cases that ran, a filtered subset)' },
+  missing_isolation: { label: 'Missing isolation', hint: 'Trials share state (files, caches, memory, accounts), so one run changes the next' },
+  one_sided_set: { label: 'One-sided set', hint: 'The test set only checks one direction (only attacks, only refusals) so over- or under-triggering goes unseen' },
+} as const;
+export type EvalBugType = keyof typeof EVAL_BUGS;
+export const EVAL_BUG_TYPES = Object.keys(EVAL_BUGS) as [EvalBugType, ...EvalBugType[]];
+
+/** Twin Trace: why the two runs diverged. */
+export const TWIN_CAUSES = ['reasoning', 'coordination', 'regression'] as const;
+export const TWIN_CAUSE_INFO: Record<(typeof TWIN_CAUSES)[number], string> = {
+  reasoning: 'Same inputs, the agent reasoned or acted differently on its own',
+  coordination: 'Another agent or the user supplied something the agent mishandled',
+  regression: 'A change to the model, prompt or tools broke behaviour that used to work',
+};
+
 export const TIERS = ['beginner', 'practitioner', 'advanced', 'pro', 'sme'] as const;
 export type Tier = (typeof TIERS)[number];
 

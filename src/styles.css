@@ -131,3 +131,14 @@ a.rung { color: var(--text); } a.rung:hover { background: var(--panel2); }
 
 .confidence { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 10px 0; }
 .panel.lock { border-color: #f59e0b66; }
+.step.static { cursor: default; }
+.twin { align-items: start; }
+.code-block { border: 1px solid var(--line); border-radius: 12px; padding: 10px; overflow-x: auto; margin: 8px 0 14px; }
+.code-line { display: flex; gap: 12px; width: 100%; text-align: left; background: none; border: 1px solid transparent; border-radius: 6px; padding: 3px 8px; color: inherit; cursor: pointer; font: inherit; }
+.code-line:disabled { cursor: default; }
+.code-line:not(:disabled):hover { background: #ffffff0d; }
+.code-line .ln { opacity: .45; min-width: 1.6em; text-align: right; font-family: ui-monospace, monospace; font-size: 12px; padding-top: 2px; }
+.code-line code { white-space: pre; }
+.code-line.picked { outline: 2px solid var(--amber); }
+.code-line.ans { outline: 2px solid var(--green); background: #0f2a22; }
+.code-line.wrong { outline: 2px solid var(--red); background: #2a1215; }

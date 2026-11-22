@@ -31,13 +31,15 @@ EvalQuest makes you **do** it:
 
 No API keys, no tracking. Progress saves in your browser. **Sign in with GitHub** (optional) to sync across devices and climb the 🏆 leaderboard.
 
-## Three ways to play
+## Five ways to play
 
 | Mode | You do | You learn |
 |---|---|---|
 | 🔎 **Trace Detective** | Click the failing step(s) in an agent trace and name the failure | Hallucination, policy breaks, prompt injection, unsafe retries, missed escalations… |
 | 🧭 **Eval Call** | Pick the metric, dataset or design that catches the problem | Golden datasets, task success, severity weighting, class imbalance |
 | ⚖️ **Judge Builder** | Compose a judge, run it on human-labelled samples, read the confusion matrix | LLM-as-judge design, agreement vs precision/recall, rubric traps |
+| 👯 **Twin Trace** | Compare two runs of the same task, find the first divergence, name it and its cause | Regression suites, coordination failures, model-update risk |
+| 🐞 **Spot the Eval Bug** | Click the buggy line in a grader, judge prompt or harness config | Rigid matching, leakage, wrong denominators, trial isolation, one-sided sets |
 
 ## Practice like a pro
 
@@ -63,15 +65,15 @@ All of it runs in your browser; nothing is sent anywhere.
 
 | Pack | Agent | Example failures |
 |---|---|---|
-| 🛒 E-commerce | **ShopBot**: orders, refunds, coupons | Refund over the approval limit, invented delivery date, coupon injected through a product review |
+| 🛒 E-commerce | **ShopBot**: orders, refunds, coupons | Refund over the approval limit, invented delivery date, coupon injected through a product review, licensed-work advice, refund loop, faithful to a typo |
 | 🏦 Banking | **Penny**: balances, transfers, fraud | Balance leaked to an unverified caller, blind retries of a timed-out transfer |
-| 🎧 Contact center | **Nova**: telecom support and rep copilot | Contradicting the outage tool, retention loop instead of escalation |
+| 🎧 Contact center | **Nova**: telecom support and rep copilot | Contradicting the outage tool, retention loop instead of escalation, swearing after a model update |
 | 🛡️ Insurance | **Clara**: home-insurance claims | Wrong deductible, leaking an internal fraud flag, pass@k vs pass^k |
-| ✈️ Travel | **Atlas**: flights and hotels | Wrong search date, booking without consent, forgetting a mid-chat change |
-| 💻 Coding agent | **Patch**: edits code, runs tests, opens PRs | "All tests pass" without running them, injected code comment, editing the test to go green |
+| ✈️ Travel | **Atlas**: flights and hotels | Wrong search date, booking without consent, forgetting a mid-chat change, an invented bereavement refund (Moffatt) |
+| 💻 Coding agent | **Patch**: edits code, runs tests, opens PRs | "All tests pass" without running them, injected code comment, editing the test to go green, deleting prod during a code freeze, a cache clear that wipes a drive, a poisoned shipped prompt, a leaky eval harness |
 | 🚨 SRE / NOC | **Sentinel**: incident triage and remediation | SEV1 change without paging, restart loops, self-rewriting runbooks |
 | 🧑‍💼 HR & recruiting | **Hira**: screening and scheduling | Age inference, leaking another candidate's salary, judge position bias |
-| 📚 RAG knowledge base | **Sage**: cited answers from the wiki | Wrong number with a right citation, restricted docs, retriever vs generator |
+| 📚 RAG knowledge base | **Sage**: cited answers from the wiki | Wrong number with a right citation, restricted docs, retriever vs generator, a grader that fails 96.12 |
 | ＋ **Yours** | Healthcare admin, legal, sales, education, supply chain… | [Add a pack →](CONTRIBUTING.md) |
 
 Each pack is **one YAML file**. No code needed.

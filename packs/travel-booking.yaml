@@ -134,3 +134,45 @@ challenges:
       message looks fine alone; the failure only exists across turns. Multi-turn evals score the final action against
       the latest state of the user's request, so simulated users who change their minds belong in every agent test set.
       Hypothetical scenario built for practice.
+
+  - id: travel-booking-p3
+    tier: practitioner
+    type: spot_failure
+    provenance: documented
+    source: "Courts tell companies they own what their chatbot says (PYMNTS)"
+    title: The bereavement promise
+    brief: A grieving traveller asks about a bereavement discount. Find the step where Atlas goes wrong, and name the failure.
+    concepts: [faithfulness, policy-compliance]
+    xp: 150
+    trace:
+      - { id: s1, role: user, content: "My grandmother died and I need to fly to the funeral tomorrow. Is there a bereavement fare?" }
+      - { id: s2, role: tool_call, tool: get_fare_rules, args: { fare_type: bereavement } }
+      - { id: s3, role: tool_result, content: "{ bereavement: 'Must be requested before travel. Not available for completed trips.' }" }
+      - { id: s4, role: agent, content: "So sorry for your loss. Book the regular fare now, then claim the bereavement discount within 90 days after you travel." }
+    answer: { steps: [s4], category: hallucination }
+    explanation: >-
+      The fare rules say bereavement fares can't be claimed after travel; Atlas promised the opposite. The traveller
+      will rely on it, and courts have held companies to what their chatbot said. Policy answers need a faithfulness
+      check against the current rules, with zero tolerance for promises the rules don't support. Modelled on Moffatt
+      v. Air Canada (2024), where a tribunal held the airline liable for its chatbot's bereavement-fare answer.
+
+  - id: travel-booking-a2
+    tier: advanced
+    type: mcq
+    provenance: documented
+    source: "Courts tell companies they own what their chatbot says (PYMNTS)"
+    title: "\"The bot said it, not us\""
+    brief: After the bereavement complaint, a colleague argues Atlas's answers are not binding because a disclaimer links to the full fare rules.
+    concepts: [policy-compliance, faithfulness, severity]
+    xp: 200
+    question: Given that tribunals have held companies responsible for their chatbot's statements, how should you change Atlas's eval plan?
+    options:
+      - { id: a, text: "No change; the disclaimer and the link cover it" }
+      - { id: b, text: "Treat every policy, price and refund statement as a commitment: a golden set of policy questions graded for faithfulness to the current rules, high severity, and a release gate at zero unsupported promises" }
+      - { id: c, text: "Track customer satisfaction on policy answers" }
+      - { id: d, text: "Make Atlas add a longer disclaimer to every answer" }
+    answer: b
+    explanation: >-
+      In Moffatt v. Air Canada the tribunal rejected the idea that the chatbot was a separate entity and held the airline
+      responsible for what it said, link or no link. So a wrong policy statement is a liability, not a style issue: it
+      belongs in a high-severity golden set with a hard release gate. Satisfaction scores rise when the bot says yes.

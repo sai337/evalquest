@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { FAILURE_CODES, TIERS } from './taxonomy';
+import { EVAL_BUG_TYPES, FAILURE_CODES, TIERS, TWIN_CAUSES } from './taxonomy';
 
 export const PROVENANCE = ['documented', 'benchmark', 'hypothetical'] as const;
 
@@ -77,7 +77,30 @@ export const JudgeBuilderSchema = z.object({
   }),
 });
 
-export const ChallengeSchema = z.discriminatedUnion('type', [SpotFailureSchema, McqSchema, JudgeBuilderSchema]);
+export const TwinTraceSchema = z.object({
+  ...base,
+  type: z.literal('twin_trace'),
+  label_a: z.string().min(2),
+  label_b: z.string().min(2),
+  trace_a: z.array(Step).min(2),
+  trace_b: z.array(Step).min(2),
+  /** step = the first step in trace_b that diverges from trace_a (a content eval checks this). */
+  answer: z
+    .object({ step: z.string(), code: z.enum(FAILURE_CODES), also_accept: z.array(z.enum(FAILURE_CODES)).default([]), cause: z.enum(TWIN_CAUSES) })
+    .refine((a) => !a.also_accept.includes(a.code), { message: 'also_accept must not repeat the main code' }),
+});
+
+export const EvalBugSchema = z.object({
+  ...base,
+  type: z.literal('eval_bug'),
+  artifact: z.enum(['judge_prompt', 'grader', 'harness']),
+  language: z.string().default('text'),
+  code_lines: z.array(z.string()).min(4),
+  /** line is 1-based. */
+  answer: z.object({ line: z.number().int().positive(), bug_type: z.enum(EVAL_BUG_TYPES) }),
+});
+
+export const ChallengeSchema = z.discriminatedUnion('type', [SpotFailureSchema, McqSchema, JudgeBuilderSchema, TwinTraceSchema, EvalBugSchema]);
 
 export const PackSchema = z.object({
   id,
@@ -100,5 +123,7 @@ export type Step = z.infer<typeof Step>;
 export type SpotFailure = z.infer<typeof SpotFailureSchema>;
 export type Mcq = z.infer<typeof McqSchema>;
 export type JudgeBuilder = z.infer<typeof JudgeBuilderSchema>;
+export type TwinTrace = z.infer<typeof TwinTraceSchema>;
+export type EvalBug = z.infer<typeof EvalBugSchema>;
 export type Challenge = z.infer<typeof ChallengeSchema>;
 export type Pack = z.infer<typeof PackSchema>;

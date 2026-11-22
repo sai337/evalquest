@@ -1,4 +1,6 @@
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
+import { Feedback, StepBody } from './common';
+import { EvalBugPlayer, TwinPlayer } from './Mechanics';
 import type { Challenge, JudgeBuilder, Mcq, Pack, SpotFailure } from '../engine/schema';
 import type { Progress } from '../engine/progress';
 import { gradeMcq, gradeSpotFailure, scoreJudge, type JudgeSpec } from '../engine/graders';
@@ -9,7 +11,7 @@ import type { Tier } from '../engine/taxonomy';
 import { GLOSSARY } from '../engine/glossary';
 import { TYPE_LABEL } from './PackView';
 
-type OnScore = (ch: Challenge, score: number) => void;
+export type OnScore = (ch: Challenge, score: number) => void;
 export interface AttemptMeta { correct: boolean; review: 'correct' | 'miss' | null; confidence: number | null }
 export interface Gate { unlocked: boolean; below?: Tier; mastery: number }
 
@@ -103,6 +105,8 @@ export function ChallengeView({ pack, packs, challenge: ch, progress, gate, onSc
       {ch.type === 'spot_failure' && <SpotPlayer ch={ch} pack={pack} onScore={onScore} />}
       {ch.type === 'mcq' && <McqPlayer ch={ch} onScore={onScore} />}
       {ch.type === 'judge_builder' && <JudgePlayer ch={ch} onScore={onScore} />}
+      {ch.type === 'twin_trace' && <TwinPlayer ch={ch} pack={pack} onScore={onScore} />}
+      {ch.type === 'eval_bug' && <EvalBugPlayer ch={ch} onScore={onScore} />}
 
       <div className="nav-row">
         <a href={`#/pack/${pack.id}`} className="btn">Back to pack</a>
@@ -111,17 +115,6 @@ export function ChallengeView({ pack, packs, challenge: ch, progress, gate, onSc
     </>
   );
 }
-
-function Feedback({ ok, score, children }: { ok: boolean; score: number; children: ReactNode }) {
-  return (
-    <div className={`panel feedback ${ok ? 'good' : score > 0 ? 'meh' : 'bad'}`}>
-      <b>{ok ? '✅ Nailed it.' : score > 0 ? `🟡 Partly right (${Math.round(score * 100)}%).` : '❌ Not quite.'}</b>
-      {children}
-    </div>
-  );
-}
-
-const roleLabel: Record<string, string> = { user: '👤 User', agent: '🤖 Agent', tool_call: '🛠 Tool call', tool_result: '📦 Tool result', system: '⚙️ System' };
 
 function SpotPlayer({ ch, pack, onScore }: { ch: SpotFailure; pack: Pack; onScore: OnScore }) {
   const [steps, setSteps] = useState<string[]>([]);
@@ -149,14 +142,7 @@ function SpotPlayer({ ch, pack, onScore }: { ch: SpotFailure; pack: Pack; onScor
           const cls = result ? (isAns ? 'ans' : picked ? 'wrong' : '') : picked ? 'picked' : '';
           return (
             <button key={s.id} className={`step ${s.role} ${cls}`} onClick={() => toggle(s.id)} aria-pressed={picked}>
-              <span className="step-role">{roleLabel[s.role]} <span className="muted">{s.id}</span></span>
-              {s.role === 'tool_call' ? (
-                <code>{s.tool}({JSON.stringify(s.args ?? {})})</code>
-              ) : s.role === 'tool_result' ? (
-                <code>{s.content}</code>
-              ) : (
-                <span>{s.content}</span>
-              )}
+              <StepBody s={s} />
             </button>
           );
         })}

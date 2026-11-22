@@ -15,6 +15,8 @@
 | 2026-11-21 | Optional confidence pick (50/70/90/99%) scored with the Brier score; calibration curve on the Practice page | Showing players their overconfidence is itself instruction (Roediger & Karpicke). localStorage only, last 500 picks, no backend |
 | 2026-11-21 | Review deck: anything short of a clean, hint-free solve returns after 1, 3, 7 days; graduates after the 7-day review | Spaced retrieval beats restudy. A failing Judge Builder run is iteration, not a miss. localStorage only |
 | 2026-11-21 | Mastery gating: a tier unlocks at 75% mean best score (partial credit counts) on the tier below; empty tiers are skipped; locked challenges can be previewed with no XP | Agent Breaker's 75/100 gate. Preview keeps the game explorable for experienced players without letting XP skip the ladder. The daily puzzle comes from unlocked tiers only |
+| 2026-11-21 | Phase 1 mechanics Twin Trace (`twin_trace`) and Spot the Eval Bug (`eval_bug`) | Twin Trace grades step 0.4 + code 0.3 + cause 0.3; a content eval recomputes the first divergence so authors can't ship a wrong step. Eval Bug grades line 0.5 + bug type 0.5 from a fixed list of five bug classes |
+| 2026-11-21 | 11 Phase 1 extension challenges in 5 existing packs (Replit, Antigravity, Amazon Q, Bunnings, mouldy-food refund loop, Who Gives A Crap, Moffatt x2, DPD, a 96.12 grader, harness isolation) | Documented anchors from the research doc; traces are reconstructions and say so. The retail anchors' details were not re-fetched this session, so explanations state only what the headlines and the research doc support |
 
 ## Dependencies (all mainstream, latest at time of adding, `npm audit`: 0 vulnerabilities)
 

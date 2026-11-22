@@ -35,4 +35,7 @@ export const GLOSSARY: Record<string, { term: string; def: string }> = {
   'output-handling': { term: 'Output handling', def: 'Validating model output before it is rendered or executed: strip auto-loading image URLs, links that carry data and scripts. OWASP lists improper output handling as a top LLM risk.' },
   'calibration': { term: 'Calibration', def: 'Whether stated confidence matches how often you are right. If you say 90% you should be right about 9 times in 10. The Brier score is the average squared gap between confidence and outcome (0 is perfect).' },
   provenance: { term: 'Provenance', def: 'Where a test case comes from: a documented incident, a published benchmark, or a hypothetical scenario someone designed. Labelling it honestly keeps an eval suite credible.' },
+  'grader-bugs': { term: 'Grader bugs', def: 'Mistakes in the eval itself: exact matching that rejects valid answers, leaked labels, wrong denominators. When a score looks surprising, read the failed transcripts before blaming the model.' },
+  'trial-isolation': { term: 'Trial isolation', def: 'Every eval trial starts from a clean environment: fresh repo, empty cache, reset accounts. Shared state lets one trial change the next, so scores drift for reasons that have nothing to do with the agent.' },
+  'supply-chain': { term: 'Agent supply chain', def: 'Everything an agent ships with or loads at run time: system prompts, tools, MCP servers, extensions and their permissions. A malicious change anywhere in it is a release risk that evals and code review must cover.' },
 };
