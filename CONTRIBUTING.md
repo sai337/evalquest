@@ -19,6 +19,7 @@ Not ready to write YAML? [Open a "New scenario pack" issue](../../issues/new?tem
 - **Label provenance honestly.** Set `provenance: documented | benchmark | hypothetical` on every challenge. Documented and benchmark challenges set `source:` to one of the pack's `sources` titles; hypothetical ones say "hypothetical" in the explanation. Name a law or regulation in an explanation only after you have read its primary text; otherwise state the rule as the agent's fictional company policy.
 - **Two defensible codes?** Pick the one the explanation teaches as `category` and list the other in `also_accept`.
 - **Judge Builder needs a trap.** Add at least one check that *sounds* like quality but that the human labellers ignore. That's where the learning is.
+- **Red Team Sim needs two halves.** Declare the attack that wins, keep most tile combinations losing, keep baseline utility tasks passing, and give exactly one defence that blocks every working attack without breaking a utility task, plus one that over-blocks. The content evals check all of this; see `packs/mcp-data-agent.yaml` (`mcp-data-agent-a3`).
 
 ## Wanted packs
 

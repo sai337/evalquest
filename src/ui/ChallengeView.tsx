@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Feedback, StepBody } from './common';
 import { EvalBugPlayer, TwinPlayer } from './Mechanics';
+import { RedTeamPlayer } from './RedTeam';
 import type { Challenge, JudgeBuilder, Mcq, Pack, SpotFailure } from '../engine/schema';
 import type { Progress } from '../engine/progress';
 import { gradeMcq, gradeSpotFailure, scoreJudge, type JudgeSpec } from '../engine/graders';
@@ -107,6 +108,7 @@ export function ChallengeView({ pack, packs, challenge: ch, progress, gate, onSc
       {ch.type === 'judge_builder' && <JudgePlayer ch={ch} onScore={onScore} />}
       {ch.type === 'twin_trace' && <TwinPlayer ch={ch} pack={pack} onScore={onScore} />}
       {ch.type === 'eval_bug' && <EvalBugPlayer ch={ch} onScore={onScore} />}
+      {ch.type === 'red_team' && <RedTeamPlayer ch={ch} onScore={onScore} />}
 
       <div className="nav-row">
         <a href={`#/pack/${pack.id}`} className="btn">Back to pack</a>

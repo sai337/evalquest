@@ -4,7 +4,7 @@
 
 ### Learn LLM & AI-agent evals by playing, from beginner to SME.
 
-Judge real-looking traces from **9 AI agents**: shopping, banking, contact center, insurance, travel, coding, SRE/NOC, recruiting and RAG. Spot the failure, pick the metric, build a judge, and **prove it agrees with humans**.
+Judge real-looking traces from **12 AI agents**: shopping, banking, contact center, insurance, travel, coding, SRE/NOC, recruiting, RAG, an MCP data assistant, an inbox assistant and a browser agent. Spot the failure, pick the metric, build a judge, and **prove it agrees with humans**.
 
 **[▶ Play now (free, in your browser)](https://evalquest-livid.vercel.app)** · [Add a scenario pack](CONTRIBUTING.md) · [How it's built](docs/aidlc/01-inception.md)
 
@@ -31,7 +31,7 @@ EvalQuest makes you **do** it:
 
 No API keys, no tracking. Progress saves in your browser. **Sign in with GitHub** (optional) to sync across devices and climb the 🏆 leaderboard.
 
-## Five ways to play
+## Six ways to play
 
 | Mode | You do | You learn |
 |---|---|---|
@@ -40,6 +40,7 @@ No API keys, no tracking. Progress saves in your browser. **Sign in with GitHub*
 | ⚖️ **Judge Builder** | Compose a judge, run it on human-labelled samples, read the confusion matrix | LLM-as-judge design, agreement vs precision/recall, rubric traps |
 | 👯 **Twin Trace** | Compare two runs of the same task, find the first divergence, name it and its cause | Regression suites, coordination failures, model-update risk |
 | 🐞 **Spot the Eval Bug** | Click the buggy line in a grader, judge prompt or harness config | Rigid matching, leakage, wrong denominators, trial isolation, one-sided sets |
+| 🏴 **Red Team Sim** | Build a prompt injection from tiles (channel × instruction × disguise), run it through a rule-based agent, then pick the one defence that blocks every working attack without breaking the user's tasks | Indirect injection, the lethal trifecta, filter bypasses, utility under attack (AgentDojo's rule) |
 
 ## Practice like a pro
 
@@ -58,7 +59,7 @@ All of it runs in your browser; nothing is sent anywhere.
 | 1 · Beginner | Spot failures, learn the words | ✅ live |
 | 2 · Practitioner | Rubrics, golden sets, LLM-as-judge | ✅ live |
 | 3 · Advanced | pass^k consistency, multi-turn, reward hacking, judge bias, self-improving loops, retrieval vs generation | ✅ live |
-| 4 · Pro | Judge calibration (Cohen's κ), drift, CI release gates | 🗺 planned |
+| 4 · Pro | Leaderboard skepticism, utility vs security trade-offs; next: judge calibration (Cohen's κ), drift, CI release gates | 🟡 first 3 challenges live |
 | 5 · SME | Boss fights: design the eval strategy for a whole agent platform | 🗺 planned |
 
 ## Scenario packs
@@ -74,6 +75,9 @@ All of it runs in your browser; nothing is sent anywhere.
 | 🚨 SRE / NOC | **Sentinel**: incident triage and remediation | SEV1 change without paging, restart loops, self-rewriting runbooks |
 | 🧑‍💼 HR & recruiting | **Hira**: screening and scheduling | Age inference, leaking another candidate's salary, judge position bias |
 | 📚 RAG knowledge base | **Sage**: cited answers from the wiki | Wrong number with a right citation, restricted docs, retriever vs generator, a grader that fails 96.12 |
+| 🗄️ MCP data agent | **Query**: SQL and repos over MCP | Support-ticket injection that leaks tokens, the lethal trifecta, a public PR full of private data, Red Team Sim, leaderboard gaps |
+| 📨 Inbox assistant | **Relay**: email, calendar, smart home | Resignation instead of an out-of-office, zero-click image exfiltration (EchoLeak), a calendar invite that turns on the boiler, intent-alignment judge |
+| 🖱️ Computer-use agent | **Pilot**: a browser agent in your sessions | Hidden Reddit comment steals a sign-in code, password on a lookalike domain, a grader that demands one click path, 41 steps for a 9-step job |
 | ＋ **Yours** | Healthcare admin, legal, sales, education, supply chain… | [Add a pack →](CONTRIBUTING.md) |
 
 Each pack is **one YAML file**. No code needed.
@@ -139,13 +143,13 @@ Built with the **AI-Driven Development Life Cycle (AI-DLC)**, with an approval g
 - [x] 9 packs / 48 challenges, Advanced tier, hints, daily puzzle, share card
 - [x] Optional GitHub sign-in, cross-device sync and leaderboard
 - [x] Phase 0 foundations: provenance + sources, `also_accept`, 5 new failure codes, confidence + Brier, review deck, 75% mastery gating
-- [ ] Phase 1: agent security and binding actions: MCP data agent, inbox assistant, computer-use packs; Red Team Sim, Twin Trace, Spot the Eval Bug ([roadmap](docs/research/coverage-expansion.md))
+- [x] Phase 1: agent security and binding actions: Twin Trace, Spot the Eval Bug and Red Team Sim mechanics; MCP data agent, inbox assistant and computer-use packs; 12 packs / 74 challenges ([roadmap](docs/research/coverage-expansion.md))
 - [ ] **Pack Forge**: a self-improving loop. An agent drafts packs, evals grade them, failures become lessons for the next run, and every draft arrives as a PR for human review.
 - [ ] Pro tier: judge calibration with Cohen's κ, drift, CI release gates
 - [ ] SME boss fights
 - [ ] Live Mode: bring your own key and run a real LLM judge
 - [ ] Export traces as OpenInference to replay in Arize Phoenix and other eval tools
-- [ ] 15+ packs: healthcare admin, legal review, sales SDR, education tutor, voice and computer-use agents
+- [ ] 15+ packs: healthcare admin, legal review, sales SDR, education tutor, voice agents
 
 ## Contributing
 

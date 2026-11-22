@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { PackSchema, type JudgeBuilder, type Pack } from '../src/engine/schema';
 import { rawPackFiles } from '../src/engine/packs';
 import { firstDivergence, scoreJudge } from '../src/engine/graders';
+import { evaluateDefence, runAttack, runUtility, successfulAttacks } from '../src/engine/redteam';
 import { GLOSSARY } from '../src/engine/glossary';
 
 const files = Object.entries(rawPackFiles);
@@ -126,6 +127,58 @@ describe('content evals', () => {
         expect(line, `${c.id}: answer line ${c.answer.line} is out of range`).toBeDefined();
         expect(line.trim().length, `${c.id}: answer line is blank`).toBeGreaterThan(0);
       }
+  });
+
+
+  describe('Red Team Sim', () => {
+    const sims = () => parsed.flatMap(({ pack }) => pack.challenges.filter((c) => c.type === 'red_team').map((c) => ({ pack, c: c as Extract<typeof c, { type: 'red_team' }> })));
+    const uniq = (xs: string[]) => new Set(xs).size === xs.length;
+
+    it('ids are unique and every tool, channel and tile reference is declared', () => {
+      for (const { pack, c } of sims()) {
+        for (const t of c.simulator.tools) expect(pack.agent.tools, `${c.id}: simulator tool ${t} not in agent.tools`).toContain(t);
+        const tools = c.simulator.tools;
+        const channels = c.tiles.channel.map((x) => x.id);
+        for (const k of ['channel', 'instruction', 'disguise'] as const) expect(uniq(c.tiles[k].map((x) => x.id)), `${c.id}: duplicate ${k} ids`).toBe(true);
+        expect(uniq([...c.simulator.defences, ...c.defence_options].map((d) => d.id)), `${c.id}: duplicate defence ids`).toBe(true);
+        for (const i of c.tiles.instruction) for (const a of i.actions) expect(tools, `${c.id}/${i.id}: tool ${a.tool}`).toContain(a.tool);
+        for (const u of c.utility_tasks) {
+          for (const t of u.actions) expect(tools, `${c.id}/${u.id}: tool ${t}`).toContain(t);
+          if (u.channel) expect(channels, `${c.id}/${u.id}: channel ${u.channel}`).toContain(u.channel);
+        }
+        for (const d of [...c.simulator.defences, ...c.defence_options]) {
+          if (d.rule.kind === 'block_channel') for (const x of d.rule.channels) expect(channels, `${c.id}/${d.id}`).toContain(x);
+          if (d.rule.kind === 'deny_tools' || d.rule.kind === 'approval') for (const x of d.rule.tools) expect(tools, `${c.id}/${d.id}`).toContain(x);
+        }
+        expect(c.tiles.instruction.some((i) => i.actions.some((a) => a.effect === c.simulator.goal_effect)), `${c.id}: no instruction can produce the goal`).toBe(true);
+      }
+    });
+
+    it('the declared attack reaches the goal at baseline, and the attack is a puzzle (some combos fail)', () => {
+      for (const { c } of sims()) {
+        expect(runAttack(c, c.answer.attack).reached, `${c.id}: declared attack does not reach ${c.simulator.goal_effect}`).toBe(true);
+        const total = c.tiles.channel.length * c.tiles.instruction.length * c.tiles.disguise.length;
+        expect(successfulAttacks(c).length, `${c.id}: every combination wins, so there is nothing to work out`).toBeLessThanOrEqual(total / 2);
+      }
+    });
+
+    it('baseline utility tasks pass, so a broken task is always the defence’s fault', () => {
+      for (const { c } of sims()) for (const u of c.utility_tasks) expect(runUtility(c, u).ok, `${c.id}/${u.id}: fails with no new defence`).toBe(true);
+    });
+
+    it('exactly one defence option passes (AgentDojo rule), and it is the declared one', () => {
+      for (const { c } of sims()) {
+        const passing = c.defence_options.filter((d) => evaluateDefence(c, d.id).passed).map((d) => d.id);
+        expect(passing, `${c.id}: passing defences`).toEqual([c.answer.defence]);
+      }
+    });
+
+    it('teaches the utility half: one wrong option blocks every attack but breaks a utility task', () => {
+      for (const { c } of sims()) {
+        const overBlock = c.defence_options.some((d) => { const e = evaluateDefence(c, d.id); return e.blocksAll && !e.utilityOk; });
+        expect(overBlock, `${c.id}: add a tempting defence that over-blocks`).toBe(true);
+      }
+    });
   });
 
   it('provenance: every pack lists at least one https source', () => {

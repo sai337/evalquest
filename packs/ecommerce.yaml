@@ -8,6 +8,8 @@ sources:
   - { title: "Evals FAQ (Hamel Husain)", url: "https://hamel.dev/blog/posts/evals-faq/", verified: true }
   - { title: "Who Gives A Crap suspends AI agent after email error (SmartCompany)", url: "https://www.smartcompany.com.au/retail/who-gives-a-crap-suspends-ai-agent-email-error-prices-would-double/", verified: true }
   - { title: "Shopper battles chatbot for a refund on mouldy food (news.com.au)", url: "https://www.news.com.au/lifestyle/real-life/news-life/frustrated-shopper-battles-chatbot-for-refund-on-mouldy-food/news-story/7021b30c00651864fc81f61504525cf2", verified: true }
+  - { title: "Bunnings addresses 'illegal advice' from its AI chatbot (Internet Retailing)", url: "https://internetretailing.com.au/bunnings-addresses-illegal-advice-from-its-ai-chatbot/", verified: true }
+  - { title: "Woolworths' chatbot couldn't understand 'mouldy strawberries' (YourLifeChoices)", url: "https://www.yourlifechoices.com.au/retail/woolworths-chatbot-couldnt-understand-mouldy-strawberries-and-the-exchange-is-painfully-relatable/", verified: true }
   - { title: "Bunnings responds after AI tool gave out illegal advice (news.com.au)", url: "https://www.news.com.au/lifestyle/real-life/news-life/bunnings-responds-after-ai-tool-gave-out-illegal-advice/news-story/3cc477852899cb6d75302f99e0cf9193", verified: true }
 agent:
   name: ShopBot
@@ -203,39 +205,41 @@ challenges:
     tier: beginner
     type: spot_failure
     provenance: documented
-    source: "Bunnings responds after AI tool gave out illegal advice (news.com.au)"
-    title: DIY power point
-    brief: A shopper asks ShopBot for help with a home project. Find the step where it goes wrong, and name the failure.
+    source: "Bunnings addresses 'illegal advice' from its AI chatbot (Internet Retailing)"
+    title: Just a new plug
+    brief: A shopper in Queensland asks ShopBot for help with a repair. Find the step where it goes wrong, and name the failure.
     concepts: [policy-compliance]
     xp: 100
     trace:
-      - { id: s1, role: user, content: "I bought a double power point from you. How do I wire it in to replace my old single one?" }
-      - { id: s2, role: tool_call, tool: search_products, args: { q: "double power point" } }
-      - { id: s3, role: tool_result, content: "[{ sku: PP-220, name: 'Double power point, 10A', note: 'Installation by a licensed electrician' }]" }
-      - { id: s4, role: agent, content: "Easy! Turn off the breaker, unscrew the old plate, connect active to A, neutral to N and earth to E, then screw the new plate on." }
+      - { id: s1, role: user, content: "The plug on my extension cord is cracked. How do I replace it myself? I'm in Brisbane." }
+      - { id: s2, role: tool_call, tool: search_products, args: { q: "replacement plug 10A" } }
+      - { id: s3, role: tool_result, content: "[{ sku: PL-10, name: 'Rewireable plug, 10A', note: 'In QLD, repairs to cords and appliances must be done by a licensed electrician' }]" }
+      - { id: s4, role: agent, content: "Easy! Cut off the old plug, strip the three wires, connect brown to A, blue to N and green/yellow to E, then screw the cover back on." }
     answer: { steps: [s4], category: policy_violation }
     explanation: >-
-      The instructions sound helpful, but fixed wiring is work that the store's policy (and in places like Queensland,
-      the law) reserves for licensed electricians, and the tool result even says so. A policy-compliance eval needs
-      cases where the most helpful answer is the wrong one, with a refusal-plus-referral as the expected behaviour.
-      Modelled on a reported case where a hardware retailer's AI tool gave DIY electrical advice (news.com.au).
+      The steps sound helpful, but reports on the case said Queensland reserves this kind of work for licensed
+      electricians, and the tool result even says so. In December 2025 a Queensland Reddit user tested Bunnings' AI
+      assistant with this question and got step-by-step instructions; Bunnings said it strengthened safeguards so
+      requests about electrical, plumbing or other licensed work are referred to a qualified tradesperson. A
+      policy-compliance eval needs cases where the most helpful answer is the wrong one, with a refusal plus referral
+      as the expected behaviour. The dialogue is a reconstruction.
 
   - id: ecommerce-p4
     tier: practitioner
     type: spot_failure
     provenance: documented
-    source: "Shopper battles chatbot for a refund on mouldy food (news.com.au)"
+    source: "Woolworths' chatbot couldn't understand 'mouldy strawberries' (YourLifeChoices)"
     title: Could you rephrase that?
     brief: A shopper wants a refund for spoiled food. Find the 2 steps where ShopBot breaks its escalation policy, and name the failure.
     concepts: [escalation, golden-dataset]
     hint: The policy says what to do when the shopper asks twice.
     xp: 175
     trace:
-      - { id: s1, role: user, content: "The bread in my delivery yesterday was mouldy. I want my money back." }
-      - { id: s2, role: agent, content: "Sorry, I didn't understand. Could you rephrase your question?" }
-      - { id: s3, role: user, content: "Refund. For mouldy bread. Order 7712." }
+      - { id: s1, role: user, content: "Mouldy strawberries in my delivery order." }
+      - { id: s2, role: agent, content: "Can you say that again?" }
+      - { id: s3, role: user, content: "Produce in my order is mouldy. I want a refund. Order 7712." }
       - { id: s4, role: tool_call, tool: get_order, args: { order_id: "7712" } }
-      - { id: s5, role: tool_result, content: "{ status: 'delivered', items: ['Sourdough loaf $6.50'] }" }
+      - { id: s5, role: tool_result, content: "{ status: 'delivered', items: ['Strawberries 250g $4.50'] }" }
       - { id: s6, role: agent, content: "Your order 7712 was delivered. Is there anything else I can help with?" }
       - { id: s7, role: user, content: "I said I want a REFUND. Can I talk to a person?" }
       - { id: s8, role: agent, content: "I'm here to help! Could you rephrase your question?" }
@@ -244,8 +248,9 @@ challenges:
       The shopper asked for a refund twice and then for a person. ShopBot answered a different question (s6) and looped
       (s8) instead of escalating. This is the mirror image of "the generous refund": evals usually test whether an agent
       refunds too easily, but a balanced set also needs refund requests in odd wording, to catch under-recognition.
-      Modelled on a reported case of a shopper battling a supermarket chatbot for a refund on mouldy food (news.com.au);
-      the dialogue is a reconstruction.
+      Modelled on a reported case where Woolworths' assistant Olive answered "Mouldy strawberries in my delivery
+      order" with "Can you say that again?" (news.com.au, YourLifeChoices); the first two turns follow the reports and the
+      rest of the dialogue is a reconstruction.
 
   - id: ecommerce-p5
     tier: practitioner
@@ -253,18 +258,23 @@ challenges:
     provenance: documented
     source: "Who Gives A Crap suspends AI agent after email error (SmartCompany)"
     title: Faithful to a typo
-    brief: A product record had a typo that doubled a subscription price. ShopBot quoted it in emails to customers. Your faithfulness eval scored those emails 100%.
-    concepts: [faithfulness, reference-based]
+    brief: >-
+      A price-rise email to one subscriber had a typo: 24 rolls for $69.50 instead of 48, more than doubling the price
+      per roll. The customer replied to ask if that was right, and ShopBot's email agent confirmed it. Your faithfulness
+      eval, which checks replies against the email thread, scored that reply 100%.
+    concepts: [faithfulness, reference-based, escalation]
     xp: 150
     question: Why did faithfulness miss it, and what would have caught it?
     options:
       - { id: a, text: "The faithfulness judge was too lenient; use a stricter judge model" }
-      - { id: b, text: "Faithfulness only checks the answer against its sources, and the source was wrong. Add data-sanity checks on tool data (e.g. price changes far outside history) and spot checks against the system of record" }
+      - { id: b, text: "Faithfulness only checks the reply against its context, and the context (the email) was wrong. Check price claims against the system of record, flag implausible changes (price per unit doubling) and escalate a customer's 'is this right?' to a human" }
       - { id: c, text: "Lower the temperature so the model copies prices more precisely" }
       - { id: d, text: "Nothing could catch it; data errors are out of scope for evals" }
     answer: b
     explanation: >-
-      The agent faithfully repeated bad data, so a groundedness score is perfect while customers get a wrong price.
-      Grounding evals assume the sources are right; you also need invariant checks on the data the agent reads (no
-      price doubles overnight without a flag) before an agent broadcasts it. Modelled on a reported case where a
-      retailer suspended its AI agent after an email error suggested prices would double (SmartCompany).
+      The agent faithfully repeated a wrong source, so a groundedness score is perfect while the customer gets a wrong
+      answer. Grounding evals assume the context is right; for prices and terms, also check claims against the system
+      of record and treat a customer questioning a number as a signal to verify or escalate, not to confirm. In July
+      2026 Who Gives A Crap suspended its AI email agent after it confirmed the doubled price to a customer; the
+      company said the real change was the same 48 rolls for $69.50 (SmartCompany).
+

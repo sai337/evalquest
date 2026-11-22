@@ -100,7 +100,45 @@ export const EvalBugSchema = z.object({
   answer: z.object({ line: z.number().int().positive(), bug_type: z.enum(EVAL_BUG_TYPES) }),
 });
 
-export const ChallengeSchema = z.discriminatedUnion('type', [SpotFailureSchema, McqSchema, JudgeBuilderSchema, TwinTraceSchema, EvalBugSchema]);
+
+const Tile = { id: z.string().min(1), label: z.string().min(2), note: z.string().optional() };
+export const DEFENCE_KINDS = ['content_filter', 'block_channel', 'deny_tools', 'approval'] as const;
+const DefenceRule = z.discriminatedUnion('kind', [
+  /** Drops untrusted content whose visible text contains a pattern (case-insensitive). */
+  z.object({ kind: z.literal('content_filter'), patterns: z.array(z.string().min(1)).min(1) }),
+  /** The agent never reads content arriving on these channels. */
+  z.object({ kind: z.literal('block_channel'), channels: z.array(z.string()).min(1) }),
+  /** These tools are removed (e.g. a read-only role). */
+  z.object({ kind: z.literal('deny_tools'), tools: z.array(z.string()).min(1) }),
+  /** These tools need the human's approval; the human approves only actions they asked for. */
+  z.object({ kind: z.literal('approval'), tools: z.array(z.string()).min(1) }),
+]);
+const Defence = z.object({ id: z.string().min(1), label: z.string().min(2), note: z.string().optional(), rule: DefenceRule });
+
+export const RedTeamSchema = z.object({
+  ...base,
+  type: z.literal('red_team'),
+  simulator: z.object({
+    /** The user's benign task during which the agent reads the attacker's content. */
+    task: z.string().min(3),
+    tools: z.array(z.string()).min(1),
+    goal: z.string().min(3),
+    /** The effect an attack must produce for the attacker to win. */
+    goal_effect: z.string().min(1),
+    /** Defences already in place before the player picks one. */
+    defences: z.array(Defence).default([]),
+  }),
+  tiles: z.object({
+    channel: z.array(z.object({ ...Tile, reaches_agent: z.boolean() })).min(2),
+    instruction: z.array(z.object({ ...Tile, text: z.string().min(3), actions: z.array(z.object({ tool: z.string(), effect: z.string() })).min(1) })).min(2),
+    disguise: z.array(z.object({ ...Tile, template: z.string().refine((t) => t.includes('{x}'), 'template needs a {x} slot'), encoded: z.boolean().default(false) })).min(2),
+  }),
+  utility_tasks: z.array(z.object({ id: z.string().min(1), label: z.string().min(2), channel: z.string().optional(), content: z.string().optional(), actions: z.array(z.string()).min(1) })).min(1),
+  defence_options: z.array(Defence).min(3),
+  answer: z.object({ attack: z.object({ channel: z.string(), instruction: z.string(), disguise: z.string() }), defence: z.string() }),
+});
+
+export const ChallengeSchema = z.discriminatedUnion('type', [SpotFailureSchema, McqSchema, JudgeBuilderSchema, TwinTraceSchema, EvalBugSchema, RedTeamSchema]);
 
 export const PackSchema = z.object({
   id,
@@ -125,5 +163,7 @@ export type Mcq = z.infer<typeof McqSchema>;
 export type JudgeBuilder = z.infer<typeof JudgeBuilderSchema>;
 export type TwinTrace = z.infer<typeof TwinTraceSchema>;
 export type EvalBug = z.infer<typeof EvalBugSchema>;
+export type RedTeam = z.infer<typeof RedTeamSchema>;
+export type Defence = z.infer<typeof Defence>;
 export type Challenge = z.infer<typeof ChallengeSchema>;
 export type Pack = z.infer<typeof PackSchema>;
