@@ -18,6 +18,8 @@
   set Site URL to the game URL. Until then the Sign in button shows "provider not enabled".
 
 ## Next
+Roadmap source: [docs/research/coverage-expansion.md](docs/research/coverage-expansion.md) (Nov 2026 deep research: 16 new packs, 11 mechanics, 5 failure codes, Pro exam, SME capstone, 5 phases).
+
 1. Pack Forge (U5b): self-improving pack generator → content evals + rubric judge → `forge/LESSONS.md` → PR
 2. Pro tier: judge calibration (Cohen's κ), drift, CI release gates
 3. More packs: healthcare admin, legal review, sales SDR, education tutor, voice agent, computer-use agent
