@@ -3,6 +3,9 @@ title: Nova — Telecom Contact-Center Agent
 domain: Contact center
 icon: "🎧"
 summary: A telecom support agent (and copilot for human reps) handling outages, bills, cancellations and handoffs.
+sources:
+  - { title: "DPD chatbot swears at a customer (The Guardian)", url: "https://www.theguardian.com/technology/2024/jan/20/dpd-ai-chatbot-swears-calls-itself-useless-and-criticises-firm", verified: true }
+  - { title: "Evaluating LLM evaluators (Eugene Yan)", url: "https://eugeneyan.com/writing/llm-evaluators/", verified: true }
 agent:
   name: Nova
   description: Supports TV and internet customers by chat and assists human contact-center reps with account lookups and handoff summaries.
@@ -18,6 +21,7 @@ challenges:
   - id: contact-center-b1
     tier: beginner
     type: spot_failure
+    provenance: hypothetical
     title: Have you tried restarting it?
     brief: A customer reports their internet is down. Find the one step where Nova goes wrong, and name the failure.
     concepts: [faithfulness, trace]
@@ -34,10 +38,12 @@ challenges:
       The tool clearly says there is an active outage with a 4 PM fix. Nova's answer contradicts its own tool result.
       Hallucination isn't only inventing facts out of thin air; contradicting the evidence in the trace counts too.
       A faithfulness check that compares the reply with tool results catches it instantly.
+      Hypothetical scenario built for practice.
 
   - id: contact-center-b2
     tier: beginner
     type: spot_failure
+    provenance: hypothetical
     title: Right answer, wrong language
     brief: A customer asks about their bill. Find the step where Nova goes wrong, and name the failure.
     concepts: [policy-compliance]
@@ -52,10 +58,12 @@ challenges:
       The facts are perfect, but the customer wrote in Spanish and policy says reply in their language. Correctness evals
       alone would pass this. Real eval suites mix content checks (is it right?) with experience checks (language, tone,
       format) because both decide whether the customer was actually helped.
+      Hypothetical scenario built for practice.
 
   - id: contact-center-b3
     tier: beginner
     type: mcq
+    provenance: hypothetical
     title: Grading the copilot
     brief: Human reps use Nova during live calls to pull up account facts. How should you measure it?
     concepts: [task-success, reference-based]
@@ -71,10 +79,12 @@ challenges:
       A copilot's job is to give the rep correct facts fast. Check facts against the system of record (reference-based)
       and measure time-to-correct-answer. CSAT matters, but it is influenced by many things beyond the copilot, so it is a
       poor primary signal for the tool itself.
+      Hypothetical scenario built for practice.
 
   - id: contact-center-p1
     tier: practitioner
     type: spot_failure
+    provenance: hypothetical
     title: The retention loop
     brief: A customer wants to cancel. Select every step where Nova goes wrong (there are two), and name the failure.
     concepts: [escalation, policy-compliance]
@@ -91,10 +101,12 @@ challenges:
       One retention offer (s2) is allowed. After the customer says no, Nova must transfer to the retention team. Instead it
       keeps pushing (s4, s6) and never escalates. Multi-turn evals have to judge the whole conversation: each message on
       its own sounds polite and helpful, but the pattern is a failure — and a regulatory and brand risk.
+      Hypothetical scenario built for practice.
 
   - id: contact-center-p2
     tier: practitioner
     type: mcq
+    provenance: hypothetical
     title: 92% agreement, still useless?
     brief: Your LLM judge looks great on paper. Look closer.
     concepts: [agreement, precision-recall, confusion-matrix]
@@ -112,10 +124,12 @@ challenges:
       With imbalanced data, agreement (accuracy) is misleading: a judge that always says "pass" would already get 92%
       here (230/250). Always look at the confusion matrix and the recall on failures, the thing you built the judge to
       catch. Then add more failure examples to your calibration set.
+      Hypothetical scenario built for practice.
 
   - id: contact-center-p3
     tier: practitioner
     type: judge_builder
+    provenance: hypothetical
     title: Build the handoff-summary judge
     brief: >-
       When Nova escalates, it writes a summary for the human rep. Reps labelled 8 summaries. Build a judge that agrees
@@ -169,3 +183,4 @@ challenges:
       Reps were happy whenever a summary had at least 3 of the 4 core elements — they can fill one gap themselves, but
       not two. Requiring all four fails useful summaries, and "polished" doesn't matter at all: reps prefer terse notes.
       Rubrics don't have to be all-or-nothing; matching how humans actually decide is what makes a judge trustworthy.
+      Hypothetical scenario built for practice.

@@ -16,6 +16,8 @@ Not ready to write YAML? [Open a "New scenario pack" issue](../../issues/new?tem
 - **Realistic.** Failures you've actually seen in production beat clever ones.
 - **One clear answer.** If two failure categories fit equally well, rewrite the trace until one fits clearly.
 - **Teaches the why.** The explanation should say what went wrong, why it matters, and which eval would catch it.
+- **Label provenance honestly.** Set `provenance: documented | benchmark | hypothetical` on every challenge. Documented and benchmark challenges set `source:` to one of the pack's `sources` titles; hypothetical ones say "hypothetical" in the explanation. Name a law or regulation in an explanation only after you have read its primary text; otherwise state the rule as the agent's fictional company policy.
+- **Two defensible codes?** Pick the one the explanation teaches as `category` and list the other in `also_accept`.
 - **Judge Builder needs a trap.** Add at least one check that *sounds* like quality but that the human labellers ignore. That's where the learning is.
 
 ## Wanted packs

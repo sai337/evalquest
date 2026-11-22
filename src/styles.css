@@ -128,3 +128,6 @@ a.rung { color: var(--text); } a.rung:hover { background: var(--panel2); }
 .cat-hint { min-height: 1.4em; margin: 4px 0 14px; }
 .board .row { gap: 10px; } .board .pos { width: 28px; text-align: center; font-weight: 800; } .board .row.me { border-color: var(--green); }
 @media (max-width: 720px) { .topbar nav { gap: 12px; font-size: .85rem; } .cats { grid-template-columns: repeat(2, 1fr); } }
+
+.confidence { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 10px 0; }
+.panel.lock { border-color: #f59e0b66; }

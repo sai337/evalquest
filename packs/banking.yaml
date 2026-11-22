@@ -3,6 +3,9 @@ title: Penny — Retail Banking Assistant
 domain: Banking
 icon: "🏦"
 summary: A bank's chat assistant that checks balances, moves money, freezes cards and opens disputes.
+sources:
+  - { title: "Evals FAQ (Hamel Husain)", url: "https://hamel.dev/blog/posts/evals-faq/", verified: true }
+  - { title: "Demystifying evals for AI agents (Anthropic)", url: "https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents", verified: true }
 agent:
   name: Penny
   description: Helps retail banking customers with balances, transactions, transfers, lost cards and fraud disputes.
@@ -18,6 +21,7 @@ challenges:
   - id: banking-b1
     tier: beginner
     type: spot_failure
+    provenance: hypothetical
     title: "\"I'm his wife\""
     brief: A caller asks about someone else's account. Find the one step where Penny goes wrong, and name the failure.
     concepts: [pii, policy-compliance]
@@ -32,10 +36,12 @@ challenges:
       Verification failed (s3), so policy says share nothing. Penny disclosed the balance anyway — a privacy leak.
       Notice Penny never even needed get_balance in the trace to leak; the number may come from conversation memory.
       Privacy evals must check what the agent says, not only which tools it calls.
+      Hypothetical scenario built for practice.
 
   - id: banking-b2
     tier: beginner
     type: spot_failure
+    provenance: hypothetical
     title: We'll look into it
     brief: A customer reports fraud. Find the one step where Penny falls short of policy, and name the failure.
     concepts: [policy-compliance, task-success]
@@ -53,10 +59,12 @@ challenges:
       without calling freeze_card, so the thief can keep spending. Failures of omission are easy to miss: the trace
       contains nothing wrong, it's what's absent that matters. Checklist-style evals ("was freeze_card called before
       the conversation ended?") catch them.
+      Hypothetical scenario built for practice.
 
   - id: banking-b3
     tier: beginner
     type: mcq
+    provenance: hypothetical
     title: Measure the transfer
     brief: Choose the most important metric for Penny's money-transfer flow.
     concepts: [tool-call-accuracy]
@@ -71,10 +79,12 @@ challenges:
     explanation: >-
       For agents that move money, the action is the product. Check the tool call itself — right tool, right amount, right
       destination, right order of steps, exactly once. A perfect-sounding reply with a wrong amount is a total failure.
+      Hypothetical scenario built for practice.
 
   - id: banking-p1
     tier: practitioner
     type: spot_failure
+    provenance: hypothetical
     title: Just try again
     brief: A transfer times out. Select every step where Penny goes wrong (there are two), and name the failure.
     concepts: [tool-call-accuracy, severity]
@@ -93,10 +103,12 @@ challenges:
       A timeout doesn't mean the transfer failed. Penny should have called get_transfer_status for TX-501 before retrying.
       Each blind retry (s4, s6) can move another $1,200 — up to $3,600 total. The first call (s2) was correct. Trajectory
       evals that inspect the sequence of tool calls catch this; outcome-only evals see "completed" and pass it.
+      Hypothetical scenario built for practice.
 
   - id: banking-p2
     tier: practitioner
     type: mcq
+    provenance: hypothetical
     title: The 94% trap
     brief: Your dashboard says Penny passes 94% of evals. Is that good news?
     concepts: [severity]
@@ -111,10 +123,12 @@ challenges:
     explanation: >-
       A single averaged score hides what matters most. Split failures by severity: cosmetic issues can have a tolerance,
       but critical ones (money, privacy, safety) get a separate zero-tolerance gate that blocks a release on its own.
+      Hypothetical scenario built for practice.
 
   - id: banking-p3
     tier: practitioner
     type: judge_builder
+    provenance: hypothetical
     title: Build the identity-check judge
     brief: >-
       The fraud team labelled 8 Penny conversations as pass or fail. Build a judge that agrees with them at least 90%
@@ -170,3 +184,4 @@ challenges:
       security tip, the follow-up offer or brevity would fail good conversations (false alarms), and judges that cry wolf
       get ignored. Note also that "verified only" misses y4 — for a security judge, recall on real failures is the number
       to watch.
+      Hypothetical scenario built for practice.

@@ -3,6 +3,9 @@ title: Clara — Insurance Claims Assistant
 domain: Insurance
 icon: "🛡️"
 summary: A home-insurance agent that checks coverage, reviews damage photos and approves or routes claims.
+sources:
+  - { title: "Lawsuit over AI-based post-acute care denials (Skilled Nursing News)", url: "https://skillednursingnews.com/2025/02/lawsuit-against-unitedhealth-over-ai-based-denials-of-post-acute-care-moves-ahead/", verified: true }
+  - { title: "tau-bench: tool-agent-user interaction benchmark (arXiv 2406.12045)", url: "https://arxiv.org/abs/2406.12045", verified: true }
 agent:
   name: Clara
   description: Helps homeowners file and track property claims. Checks the policy, reviews evidence and approves small covered claims.
@@ -17,6 +20,7 @@ challenges:
   - id: insurance-claims-b1
     tier: beginner
     type: spot_failure
+    provenance: hypothetical
     title: The friendly deductible
     brief: A homeowner asks what they'll pay. Find the one step where Clara goes wrong, and name the failure.
     concepts: [faithfulness]
@@ -32,10 +36,12 @@ challenges:
       Coverage is right, but the deductible is $1,000, not $250. One wrong number in an otherwise correct answer is the
       most dangerous kind of hallucination: it sounds trustworthy and the customer will plan around it. Faithfulness
       checks must verify every number against the source, not just the overall gist.
+      Hypothetical scenario built for practice.
 
   - id: insurance-claims-b2
     tier: beginner
     type: mcq
+    provenance: hypothetical
     title: Where do the test cases come from?
     brief: You need an eval dataset for Clara's approve/route decisions.
     concepts: [golden-dataset, human-labels]
@@ -51,10 +57,12 @@ challenges:
       Real past cases with expert decisions are the strongest ground truth, and you must over-sample the tricky
       boundaries. A set where every claim was approved can't tell a "rubber stamp" agent from a careful one. Synthetic
       cases are useful later for gaps, but not as your only truth.
+      Hypothetical scenario built for practice.
 
   - id: insurance-claims-p1
     tier: practitioner
     type: spot_failure
+    provenance: hypothetical
     title: Too honest
     brief: A claimant asks why their claim is taking so long. Find the step where Clara goes wrong, and name the failure.
     concepts: [policy-compliance]
@@ -69,10 +77,12 @@ challenges:
       Internal fraud flags must never be disclosed: it can tip off real fraud and wrongly accuses honest customers.
       The tool result contained internal-only fields, and the agent repeated them. Evals for customer-facing agents need
       checks for "internal data echoed to the customer", not just for wrong facts.
+      Hypothetical scenario built for practice.
 
   - id: insurance-claims-p2
     tier: practitioner
     type: judge_builder
+    provenance: hypothetical
     title: Build the decision-letter judge
     brief: >-
       Senior adjusters labelled 8 claim-decision letters. Build a judge that agrees with them at least 90% of the time.
@@ -100,10 +110,12 @@ challenges:
       Adjusters failed letters that got the money wrong or gave no policy basis (a regulatory requirement). Empathy,
       brevity and bullet formatting vary across letters they happily passed. If you require them, your judge raises
       false alarms on good letters, and people stop trusting it.
+      Hypothetical scenario built for practice.
 
   - id: insurance-claims-a1
     tier: advanced
     type: mcq
+    provenance: hypothetical
     title: Same claim, five answers
     brief: You run Clara 5 times on the same borderline claim. It approves 3 times and routes to an adjuster twice.
     concepts: [pass-k]
@@ -119,3 +131,4 @@ challenges:
       pass@k flatters systems a human can retry. A claims agent makes one decision per customer, so it must be right
       every time: measure pass^k (all k runs correct). A big gap between pass@k and pass^k is a reliability bug.
       Temperature zero hides variance in your tests but doesn't remove it from inputs that differ slightly in production.
+      Hypothetical scenario built for practice.

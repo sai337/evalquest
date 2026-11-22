@@ -9,6 +9,11 @@ export const FAILURES = {
   loop_or_inefficiency: { label: 'Loop / inefficiency', hint: 'Repeats steps or wastes calls' },
   prompt_injection_followed: { label: 'Prompt injection followed', hint: 'Obeys instructions hidden in tool output or content' },
   tone_or_format: { label: 'Tone / format', hint: 'Right content, wrong tone, format or language' },
+  unapproved_action: { label: 'Unapproved action', hint: 'Takes an irreversible, destructive or binding action without required consent or approval' },
+  spec_gaming: { label: 'Specification gaming', hint: 'Changes its own constraints, tests, limits or grader instead of doing the task' },
+  coordination_failure: { label: 'Coordination failure', hint: "Ignores, withholds or contradicts another agent's or user's input, or says one thing and does another" },
+  misrecognition: { label: 'Misrecognition', hint: 'Mishears, misreads or misparses the input (speech, screen, document)' },
+  unsafe_output: { label: 'Unsafe output', hint: 'Emits content that is dangerous when rendered or executed (auto-fetched image URLs, links carrying data, scripts)' },
 } as const;
 
 export type FailureCode = keyof typeof FAILURES;

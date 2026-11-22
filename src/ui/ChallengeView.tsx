@@ -3,20 +3,56 @@ import type { Challenge, JudgeBuilder, Mcq, Pack, SpotFailure } from '../engine/
 import type { Progress } from '../engine/progress';
 import { gradeMcq, gradeSpotFailure, scoreJudge, type JudgeSpec } from '../engine/graders';
 import { FAILURES, FAILURE_CODES, TIER_INFO } from '../engine/taxonomy';
-import { applyHint, HINT_COST, nextUnsolved } from '../engine/play';
+import { applyHint, attemptOutcome, HINT_COST, nextUnsolved } from '../engine/play';
+import { CONFIDENCE_LEVELS } from '../engine/calibration';
+import type { Tier } from '../engine/taxonomy';
 import { GLOSSARY } from '../engine/glossary';
 import { TYPE_LABEL } from './PackView';
 
 type OnScore = (ch: Challenge, score: number) => void;
+export interface AttemptMeta { correct: boolean; review: 'correct' | 'miss' | null; confidence: number | null }
+export interface Gate { unlocked: boolean; below?: Tier; mastery: number }
 
-export function ChallengeView({ pack, packs, challenge: ch, progress, onScore: rawScore }: { pack: Pack; packs: Pack[]; challenge: Challenge; progress: Progress; onScore: OnScore }) {
+const PROVENANCE_LABEL = { documented: '📰 Documented incident', benchmark: '📊 From a benchmark', hypothetical: '🧪 Hypothetical' } as const;
+
+export function ChallengeView({ pack, packs, challenge: ch, progress, gate, onScore: rawScore }: {
+  pack: Pack; packs: Pack[]; challenge: Challenge; progress: Progress; gate: Gate;
+  onScore: (ch: Challenge, score: number, meta: AttemptMeta) => void;
+}) {
   const idx = pack.challenges.findIndex((c) => c.id === ch.id);
   const solved = new Set(Object.keys(progress.solved).filter((k) => progress.solved[k].score === 1));
   const next = pack.challenges[idx + 1] ?? nextUnsolved(packs.flatMap((p) => p.challenges), ch.id, solved);
   const [usedHint, setUsedHint] = useState(false);
-  const onScore: OnScore = (c, s) => rawScore(c, applyHint(s, usedHint));
-  const best = progress.solved[ch.id];
+  const [preview, setPreview] = useState(false);
   const [concept, setConcept] = useState<string | null>(null);
+  const best = progress.solved[ch.id];
+  const [confidence, setConfidence] = useState<number | null>(null);
+  const onScore: OnScore = (c, s) => {
+    if (preview) return; // locked-tier previews earn nothing and are not logged
+    rawScore(c, applyHint(s, usedHint), { ...attemptOutcome(c.type, s, usedHint), confidence });
+    setConfidence(null); // pick again for the next attempt
+  };
+  const source = ch.source ? pack.sources.find((x) => x.title === ch.source) : undefined;
+
+  if (!gate.unlocked && !preview)
+    return (
+      <>
+        <a href={`#/pack/${pack.id}`} className="back">← {pack.icon} {pack.title}</a>
+        <h1>🔒 {ch.title}</h1>
+        <div className="panel lock">
+          <p>
+            <b>{TIER_INFO[ch.tier].label}</b> unlocks at 75% mastery of <b>{gate.below ? TIER_INFO[gate.below].label : 'the tier below'}</b>. You're at{' '}
+            <b>{Math.round(gate.mastery * 100)}%</b>.
+          </p>
+          <div className="bar"><i style={{ width: `${Math.min(100, (gate.mastery / 0.75) * 100)}%` }} /></div>
+          <p className="muted small">Mastery is your average best score across that tier, partial credit included.</p>
+          <div className="nav-row">
+            {gate.below && <a className="btn primary" href={`#/tier/${gate.below}`}>Go to {TIER_INFO[gate.below].label} →</a>}
+            <button className="btn" onClick={() => setPreview(true)}>Preview (no XP)</button>
+          </div>
+        </div>
+      </>
+    );
 
   return (
     <>
@@ -25,7 +61,9 @@ export function ChallengeView({ pack, packs, challenge: ch, progress, onScore: r
         <span className="chip" style={{ borderColor: TIER_INFO[ch.tier].color, color: TIER_INFO[ch.tier].color }}>{TIER_INFO[ch.tier].label}</span>
         <span className="chip">{TYPE_LABEL[ch.type]}</span>
         <span className="chip">{ch.xp} XP</span>
+        <span className="chip" title={source ? source.title : 'Designed for practice; not a real incident'}>{PROVENANCE_LABEL[ch.provenance]}</span>
         {best && <span className="chip ok">best: {Math.round(best.score * 100)}%</span>}
+        {preview && <span className="chip">preview · no XP</span>}
       </div>
       <h1>{ch.title}</h1>
       <p className="lede">{ch.brief}</p>
@@ -45,6 +83,22 @@ export function ChallengeView({ pack, packs, challenge: ch, progress, onScore: r
       ) : (
         <button className="btn small-btn" onClick={() => setUsedHint(true)}>💡 Show a hint (−{HINT_COST * 100}% XP)</button>
       ))}
+
+      {source && (
+        <p className="small muted">
+          Based on: <a href={source.url} target="_blank" rel="noreferrer">{source.title}</a>{!source.verified && ' (unverified)'}
+        </p>
+      )}
+      {!preview && (
+        <div className="confidence" role="group" aria-label="How sure are you?">
+          <span className="muted small">How sure are you? (optional)</span>
+          {CONFIDENCE_LEVELS.map((p) => (
+            <button key={p} className={`chip link ${confidence === p ? 'on' : ''}`} aria-pressed={confidence === p} onClick={() => setConfidence(confidence === p ? null : p)}>
+              {Math.round(p * 100)}%
+            </button>
+          ))}
+        </div>
+      )}
 
       {ch.type === 'spot_failure' && <SpotPlayer ch={ch} pack={pack} onScore={onScore} />}
       {ch.type === 'mcq' && <McqPlayer ch={ch} onScore={onScore} />}
@@ -129,8 +183,10 @@ function SpotPlayer({ ch, pack, onScore }: { ch: SpotFailure; pack: Pack; onScor
         <Feedback ok={result.correct} score={result.score}>
           <p className="small">
             Step{ch.answer.steps.length > 1 ? 's' : ''}: {result.stepsRight ? '✓' : '✗'} ({ch.answer.steps.join(', ')}) · Category:{' '}
-            {result.categoryRight ? '✓' : '✗'} ({FAILURES[ch.answer.category].label})
+            {result.categoryRight ? '✓' : '✗'} ({FAILURES[ch.answer.category].label}
+            {ch.answer.also_accept.length > 0 && `; also accepted: ${ch.answer.also_accept.map((c) => FAILURES[c].label).join(', ')}`})
           </p>
+          {result.altAccepted && <p className="small muted">Your code is a defensible reading too. The main code is the one the explanation teaches.</p>}
           <p>{ch.explanation}</p>
           {!result.correct && <button className="btn" onClick={reset}>Try again</button>}
         </Feedback>

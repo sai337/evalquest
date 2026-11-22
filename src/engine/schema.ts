@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { FAILURE_CODES, TIERS } from './taxonomy';
 
+export const PROVENANCE = ['documented', 'benchmark', 'hypothetical'] as const;
+
 const id = z.string().regex(/^[a-z0-9][a-z0-9-]*$/, 'use lowercase letters, digits and dashes');
 
 const Step = z.object({
@@ -20,13 +22,26 @@ const base = {
   xp: z.number().int().positive().default(100),
   concepts: z.array(z.string()).default([]),
   hint: z.string().optional(),
+  /** documented = a real incident; benchmark = from a published benchmark or paper; hypothetical = designed for practice. */
+  provenance: z.enum(PROVENANCE),
+  /** For documented/benchmark challenges: the title of the pack source it is anchored on. */
+  source: z.string().optional(),
 };
 
 export const SpotFailureSchema = z.object({
   ...base,
   type: z.literal('spot_failure'),
   trace: z.array(Step).min(2),
-  answer: z.object({ steps: z.array(z.string()).min(1), category: z.enum(FAILURE_CODES) }),
+  answer: z
+    .object({
+      steps: z.array(z.string()).min(1),
+      category: z.enum(FAILURE_CODES),
+      /** Other codes that are also a defensible reading of the failing step(s). */
+      also_accept: z.array(z.enum(FAILURE_CODES)).default([]),
+    })
+    .refine((a) => !a.also_accept.includes(a.category) && new Set(a.also_accept).size === a.also_accept.length, {
+      message: 'also_accept must not repeat the main category or itself',
+    }),
 });
 
 export const McqSchema = z.object({
@@ -70,6 +85,8 @@ export const PackSchema = z.object({
   domain: z.string(),
   icon: z.string(),
   summary: z.string(),
+  /** References the pack is grounded on. verified = the source was opened and the claim checked. */
+  sources: z.array(z.object({ title: z.string().min(3), url: z.string().url(), verified: z.boolean() })).default([]),
   agent: z.object({
     name: z.string(),
     description: z.string(),

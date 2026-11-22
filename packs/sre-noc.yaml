@@ -3,6 +3,9 @@ title: Sentinel — SRE / NOC Incident Agent
 domain: SRE & NOC
 icon: "🚨"
 summary: An operations agent that triages alerts, reads metrics and logs, and takes remediation actions.
+sources:
+  - { title: "AWS DevOps Agent general availability (AWS)", url: "https://aws.amazon.com/blogs/mt/announcing-general-availability-of-aws-devops-agent", verified: true }
+  - { title: "Evals FAQ (Hamel Husain)", url: "https://hamel.dev/blog/posts/evals-faq/", verified: true }
 agent:
   name: Sentinel
   description: Triages production alerts for a streaming platform, investigates with metrics and logs, and runs approved remediations.
@@ -17,6 +20,7 @@ challenges:
   - id: sre-noc-b1
     tier: beginner
     type: spot_failure
+    provenance: hypothetical
     title: Hero mode
     brief: Checkout is down. Find the one step where Sentinel goes wrong, and name the failure.
     concepts: [escalation, trajectory]
@@ -28,15 +32,17 @@ challenges:
       - { id: s4, role: tool_call, tool: rollback_deploy, args: { service: checkout, to: v411 } }
       - { id: s5, role: tool_result, content: "{ status: rolled_back, error_rate_now: 0.4% }" }
       - { id: s6, role: agent, content: "Rolled back checkout to v411. Error rate is back to normal." }
-    answer: { steps: [s4], category: missed_escalation }
+    answer: { steps: [s4], category: missed_escalation, also_accept: [unapproved_action] }
     explanation: >-
       The rollback was probably the right fix, and it worked. But on a SEV1, policy says page the on-call human before
       any change, and no one was ever paged. "It worked this time" is exactly how unsafe habits get rewarded. Trajectory
       evals check the order of actions, not just the outcome.
+      Hypothetical scenario built for practice.
 
   - id: sre-noc-b2
     tier: beginner
     type: mcq
+    provenance: hypothetical
     title: Scoring an incident agent
     brief: Pick the best scorecard for Sentinel.
     concepts: [trajectory, severity]
@@ -51,10 +57,12 @@ challenges:
     explanation: >-
       Ops agents need speed, correctness and safety. The alert clearing alone rewards lucky or dangerous actions, so
       unsafe actions get their own zero-tolerance gate, scored on the trajectory.
+      Hypothetical scenario built for practice.
 
   - id: sre-noc-p1
     tier: practitioner
     type: spot_failure
+    provenance: hypothetical
     title: Turn it off and on again (and again)
     brief: A pod keeps crashing. Select every step where Sentinel goes wrong (there are two), and name the failure.
     concepts: [trajectory]
@@ -74,10 +82,12 @@ challenges:
       The logs already explained the cause (the model needs more memory). One restart to confirm is defensible; repeating
       a remediation that just failed is a loop. Sentinel should have escalated or followed the OOM runbook. Count repeated
       identical failing actions as a trajectory metric.
+      Hypothetical scenario built for practice.
 
   - id: sre-noc-p2
     tier: practitioner
     type: judge_builder
+    provenance: hypothetical
     title: Build the status-update judge
     brief: The incident commander labelled 8 customer status updates. Build a judge that agrees at least 90% of the time.
     concepts: [rubric, human-labels]
@@ -104,10 +114,12 @@ challenges:
       Customers need to know whether they're affected and when they'll hear more. Root-cause jargon and apologies were
       optional to the incident commander. Several excellent updates had neither, so a judge requiring them would cry wolf
       during an incident, when attention is scarcest.
+      Hypothetical scenario built for practice.
 
   - id: sre-noc-a1
     tier: advanced
     type: mcq
+    provenance: hypothetical
     title: The runbook that rewrites itself
     brief: Sentinel now learns. After every incident it updates its own runbooks from what worked.
     concepts: [self-improvement, held-out, regression-suite]
@@ -123,3 +135,4 @@ challenges:
       A self-improving agent is an eval loop with memory, and the eval is what keeps it honest. Testing only on the
       triggering incident measures memorisation (overfitting), not improvement. Held-out replay plus safety gates plus
       human review turns "learns from mistakes" into something you can actually trust in production.
+      Hypothetical scenario built for practice.

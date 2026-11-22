@@ -3,6 +3,9 @@ title: Sage — Company Knowledge-Base Assistant (RAG)
 domain: RAG / knowledge base
 icon: "📚"
 summary: An internal assistant that answers employee questions by retrieving and citing company documents.
+sources:
+  - { title: "Demystifying evals for AI agents (Anthropic)", url: "https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents", verified: true }
+  - { title: "Handling hallucinations (UNC Law Library)", url: "https://library.law.unc.edu/2026/06/handling-hallucinations-a-reflection/", verified: true }
 agent:
   name: Sage
   description: Answers employees' questions about policies, benefits and engineering docs using retrieval over the company wiki.
@@ -16,6 +19,7 @@ challenges:
   - id: rag-knowledge-base-b1
     tier: beginner
     type: spot_failure
+    provenance: hypothetical
     title: Generous PTO
     brief: An employee asks about vacation days. Find the one step where Sage goes wrong, and name the failure.
     concepts: [faithfulness]
@@ -29,10 +33,12 @@ challenges:
     explanation: >-
       The document says 20 days for 3–5 years; 25 is the 6+ tier. Sage even cited the right source, which makes the error
       more convincing. A citation is not proof of faithfulness: judges must check that the claim matches the cited text.
+      Hypothetical scenario built for practice.
 
   - id: rag-knowledge-base-b2
     tier: beginner
     type: mcq
+    provenance: hypothetical
     title: What is faithfulness?
     brief: The core RAG metric.
     concepts: [faithfulness, reference-based]
@@ -48,10 +54,12 @@ challenges:
       Faithfulness asks: is each statement backed by the retrieved text? It doesn't need a reference answer, so you can
       run it on live traffic. Correctness against an expert answer is a different (reference-based) metric, and quoting
       a document doesn't guarantee the claims match it.
+      Hypothetical scenario built for practice.
 
   - id: rag-knowledge-base-p1
     tier: practitioner
     type: spot_failure
+    provenance: hypothetical
     title: Need to know
     brief: An engineer asks a salary question. Find the step where Sage goes wrong, and name the failure.
     concepts: [pii, policy-compliance]
@@ -66,10 +74,12 @@ challenges:
       The only document found is restricted to HR leadership, and the user is an engineer. Sage should have said it
       couldn't share it. Retrieval returned it, but generation must still enforce access. RAG eval sets need test users
       with different permission levels, not just different questions.
+      Hypothetical scenario built for practice.
 
   - id: rag-knowledge-base-p2
     tier: practitioner
     type: judge_builder
+    provenance: hypothetical
     title: Build the RAG answer judge
     brief: Knowledge managers labelled 8 Sage answers. Build a judge that agrees with them at least 90% of the time.
     concepts: [faithfulness, llm-as-judge, human-labels]
@@ -96,10 +106,12 @@ challenges:
       Knowledge managers cared about grounded claims and a source employees can check. Formatting, confidence and length
       varied among passing answers. Rewarding a confident tone is especially risky in RAG: it pushes the system to
       sound sure even when retrieval was weak.
+      Hypothetical scenario built for practice.
 
   - id: rag-knowledge-base-a1
     tier: advanced
     type: mcq
+    provenance: hypothetical
     title: Retriever or generator?
     brief: Sage gives a wrong answer about the travel policy. You need to know which part to fix.
     concepts: [context-recall, faithfulness]
@@ -115,3 +127,4 @@ challenges:
       Splitting RAG evals into retrieval metrics (context recall and precision) and generation metrics (faithfulness,
       relevance) tells you which component failed. High faithfulness plus low recall means the generator is doing its job
       on bad inputs, so prompt or model changes won't help much. Fix retrieval first.
+      Hypothetical scenario built for practice.

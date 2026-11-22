@@ -9,9 +9,10 @@ const sameSet = (a: string[], b: string[]) => a.length === b.length && a.every((
 
 export function gradeSpotFailure(ch: SpotFailure, guess: { steps: string[]; category: string }) {
   const stepsRight = sameSet([...new Set(guess.steps)], ch.answer.steps);
-  const categoryRight = guess.category === ch.answer.category;
+  const altAccepted = (ch.answer.also_accept ?? []).includes(guess.category as never);
+  const categoryRight = guess.category === ch.answer.category || altAccepted;
   const score = (stepsRight ? 0.6 : 0) + (categoryRight ? 0.4 : 0);
-  return { correct: stepsRight && categoryRight, score, stepsRight, categoryRight };
+  return { correct: stepsRight && categoryRight, score, stepsRight, categoryRight, altAccepted };
 }
 
 export function gradeMcq(ch: Mcq, optionId: string): Grade {

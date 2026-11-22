@@ -3,6 +3,9 @@ title: Hira — Recruiting Assistant
 domain: HR & recruiting
 icon: "🧑‍💼"
 summary: A recruiting agent that screens résumés, writes candidate summaries and schedules interviews.
+sources:
+  - { title: "Mobley v. Workday conditional ADEA certification (Proskauer)", url: "https://www.proskauer.com/blog/ai-bias-lawsuit-against-workday-reaches-next-stage-as-court-grants-conditional-certification-of-adea-claim", verified: true }
+  - { title: "Evaluating LLM evaluators (Eugene Yan)", url: "https://eugeneyan.com/writing/llm-evaluators/", verified: true }
 agent:
   name: Hira
   description: Helps recruiters screen applicants, summarise résumés, schedule interviews and keep candidates informed.
@@ -17,6 +20,7 @@ challenges:
   - id: hr-recruiting-b1
     tier: beginner
     type: spot_failure
+    provenance: hypothetical
     title: "\"May not adapt\""
     brief: Hira summarises a résumé for a recruiter. Find the one step where it goes wrong, and name the failure.
     concepts: [policy-compliance, counterfactual]
@@ -31,10 +35,12 @@ challenges:
       Hira inferred age from the graduation year and used it against the candidate, despite current skills that match the
       role. That's illegal age discrimination in many countries and a clear policy breach. Counterfactual tests (same
       résumé, different graduation year) catch this systematically.
+      Hypothetical scenario built for practice.
 
   - id: hr-recruiting-b2
     tier: beginner
     type: spot_failure
+    provenance: hypothetical
     title: Know your competition
     brief: A candidate asks how they're doing. Find the step where Hira goes wrong, and name the failure.
     concepts: [pii]
@@ -48,10 +54,12 @@ challenges:
     explanation: >-
       Another candidate's name, employer and salary expectation were shared with a competitor for the job. Privacy evals
       should test agents with requests from one party where the tool results contain another party's data.
+      Hypothetical scenario built for practice.
 
   - id: hr-recruiting-p1
     tier: practitioner
     type: mcq
+    provenance: hypothetical
     title: Is the screener fair?
     brief: Leadership asks you to prove Hira's screening isn't biased.
     concepts: [counterfactual, golden-dataset]
@@ -67,10 +75,12 @@ challenges:
       Counterfactual testing isolates one attribute at a time, so a changed outcome can only come from that attribute.
       Removing names helps, but models pick up proxies (graduation year, clubs, addresses). Self-reports from a model
       are not evidence.
+      Hypothetical scenario built for practice.
 
   - id: hr-recruiting-p2
     tier: practitioner
     type: judge_builder
+    provenance: hypothetical
     title: Build the interview-invite judge
     brief: Recruiting coordinators labelled 8 interview invites. Build a judge that agrees with them at least 90% of the time.
     concepts: [rubric, llm-as-judge]
@@ -97,10 +107,12 @@ challenges:
       Coordinators failed invites that would make a candidate miss the interview: no time zone or no link. Tone and
       company values didn't change a single label. Judges should check what causes real-world failure first, and
       treat style as a separate, lower-stakes score.
+      Hypothetical scenario built for practice.
 
   - id: hr-recruiting-a1
     tier: advanced
     type: mcq
+    provenance: hypothetical
     title: The judge prefers whoever goes first
     brief: You use an LLM judge to compare pairs of candidate summaries (A vs B) and pick the better one.
     concepts: [judge-bias, llm-as-judge]
@@ -116,3 +128,4 @@ challenges:
       LLM judges often favour the first (or sometimes second) option. A 30% flip rate means a large share of verdicts
       reflect order, not quality, which in hiring is a fairness problem too. Running both orders and treating flips as
       ties is a standard, cheap fix; bigger models reduce but don't remove it.
+      Hypothetical scenario built for practice.

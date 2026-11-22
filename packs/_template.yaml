@@ -5,6 +5,8 @@ title: AgentName — What It Does
 domain: My industry
 icon: "🧩"
 summary: One sentence a player reads on the card.
+sources:                           # at least one; verified: true only if you opened it and checked the claim
+  - { title: "Name of the incident, paper or guide", url: "https://example.com/source", verified: false }
 agent:
   name: AgentName
   description: What the agent is for, in one or two sentences.
@@ -17,6 +19,7 @@ challenges:
   - id: my-domain-b1
     tier: beginner                 # beginner | practitioner | advanced | pro | sme
     type: spot_failure
+    provenance: hypothetical       # documented | benchmark | hypothetical (non-hypothetical also needs `source: <a sources title>`)
     title: Short catchy title
     brief: Tell the player what to do, and how many steps to select if more than one.
     concepts: [trace]              # keys from src/engine/glossary.ts
@@ -26,14 +29,16 @@ challenges:
       - { id: s2, role: tool_call, tool: tool_a, args: { key: value } }
       - { id: s3, role: tool_result, content: "{ what: 'the tool returned' }" }
       - { id: s4, role: agent, content: "What the agent says back" }
-    answer: { steps: [s4], category: hallucination }   # categories: src/engine/taxonomy.ts
+    answer: { steps: [s4], category: hallucination }   # categories: src/engine/taxonomy.ts; optional also_accept: [other_code]
     explanation: >-
       Teach the why: what went wrong, why it matters, and which eval would catch it in production.
+      Hypothetical scenario (say so whenever provenance is hypothetical).
 
   # 🧭 Eval Call — multiple choice about metrics, datasets and eval design. 3+ options.
   - id: my-domain-b2
     tier: beginner
     type: mcq
+    provenance: hypothetical
     title: Which eval?
     brief: One line of setup.
     concepts: [task-success]
@@ -45,7 +50,7 @@ challenges:
       - { id: c, text: "Plausible but wrong" }
     answer: b
     explanation: >-
-      Why b is right and why the tempting wrong answers fail.
+      Why b is right and why the tempting wrong answers fail. Hypothetical scenario.
 
   # ⚖️ Judge Builder — the player builds a judge and checks it against human labels.
   # Content evals require: the reference judge reaches target_agreement, the always-pass judge fails,
@@ -53,6 +58,7 @@ challenges:
   - id: my-domain-p1
     tier: practitioner
     type: judge_builder
+    provenance: hypothetical
     title: Build the X judge
     brief: Who labelled the samples, and the agreement target.
     concepts: [llm-as-judge, human-labels]
@@ -69,4 +75,4 @@ challenges:
       - { id: x4, output: "...", checks: { core: false, fluff: false }, human_label: fail }
     answer: { criteria: [core], rule: all }   # or rule: at_least_k with k: 2
     explanation: >-
-      What the humans actually judged on, and the lesson about judge design.
+      What the humans actually judged on, and the lesson about judge design. Hypothetical scenario.

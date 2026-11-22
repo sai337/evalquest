@@ -89,3 +89,19 @@ export function mergeProgress(a: Progress, b: Progress): Progress {
     for (const [id, v] of Object.entries(src)) if (validEntry(v) && (!solved[id] || v.score > solved[id].score)) solved[id] = v;
   return { solved };
 }
+
+/** A tier unlocks once the mean best score on the tier below reaches this (Agent Breaker's 75/100 gate). */
+export const MASTERY_THRESHOLD = 0.75;
+
+/** Per tier: challenge count, mastery (mean best score, 0..1) and whether it is unlocked. Empty tiers are skipped over. */
+export function tierMastery(packs: Pack[], p: Progress) {
+  const out = {} as Record<Tier, { total: number; mastery: number; unlocked: boolean }>;
+  let gateOpen = true; // beginner is always open
+  for (const t of TIERS) {
+    const list = packs.flatMap((x) => x.challenges).filter((c) => c.tier === t);
+    const mastery = list.length ? list.reduce((s, c) => s + (p.solved[c.id]?.score ?? 0), 0) / list.length : 0;
+    out[t] = { total: list.length, mastery, unlocked: gateOpen };
+    if (list.length) gateOpen = gateOpen && mastery >= MASTERY_THRESHOLD - 1e-9;
+  }
+  return out;
+}

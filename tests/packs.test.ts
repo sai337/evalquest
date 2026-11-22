@@ -102,6 +102,28 @@ describe('content evals', () => {
     });
   });
 
+  it('provenance: every pack lists at least one https source', () => {
+    for (const { pack } of parsed) {
+      expect(pack.sources.length, `${pack.id}: add at least one source`).toBeGreaterThan(0);
+      for (const s of pack.sources) expect(s.url, `${pack.id}: ${s.title}`).toMatch(/^https:\/\//);
+    }
+  });
+
+  it('provenance: hypothetical challenges say so in the explanation', () => {
+    for (const { pack } of parsed)
+      for (const c of pack.challenges)
+        if (c.provenance === 'hypothetical') expect(c.explanation, `${c.id}: say "hypothetical" in the explanation`).toMatch(/hypothetical/i);
+  });
+
+  it('provenance: documented and benchmark challenges name their anchor in the pack sources', () => {
+    for (const { pack } of parsed)
+      for (const c of pack.challenges) {
+        if (c.provenance === 'hypothetical') continue;
+        expect(c.source, `${c.id}: set source to a pack source title`).toBeDefined();
+        expect(pack.sources.map((s) => s.title), `${c.id}: unknown source "${c.source}"`).toContain(c.source);
+      }
+  });
+
   it('every pack has Beginner and Practitioner content', () => {
     for (const { pack } of parsed) {
       const tiers = new Set(pack.challenges.map((c) => c.tier));

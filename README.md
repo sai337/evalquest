@@ -39,6 +39,16 @@ No API keys, no tracking. Progress saves in your browser. **Sign in with GitHub*
 | 🧭 **Eval Call** | Pick the metric, dataset or design that catches the problem | Golden datasets, task success, severity weighting, class imbalance |
 | ⚖️ **Judge Builder** | Compose a judge, run it on human-labelled samples, read the confusion matrix | LLM-as-judge design, agreement vs precision/recall, rubric traps |
 
+## Practice like a pro
+
+- 🎯 **Calibration:** say how sure you are (50/70/90/99%) before answering. The Practice page shows your Brier score and calibration curve, so you can see your own overconfidence.
+- 🔁 **Review deck:** missed or hint-assisted puzzles come back after 1, 3 and 7 days.
+- 🪜 **Mastery gating:** each tier opens at 75% mastery of the tier below (you can still preview locked challenges, with no XP).
+- 📰 **Honest provenance:** every challenge is labelled documented incident, benchmark, or hypothetical, and every pack lists its sources.
+- 15 failure codes, including unapproved actions, specification gaming, coordination failures, misrecognition and unsafe output. A step that is defensibly two things accepts both.
+
+All of it runs in your browser; nothing is sent anywhere.
+
 ## The ladder
 
 | Tier | Focus | Status |
@@ -126,6 +136,8 @@ Built with the **AI-Driven Development Life Cycle (AI-DLC)**, with an approval g
 - [x] Engine, 3 packs, Beginner + Practitioner tiers, content evals, CI
 - [x] 9 packs / 48 challenges, Advanced tier, hints, daily puzzle, share card
 - [x] Optional GitHub sign-in, cross-device sync and leaderboard
+- [x] Phase 0 foundations: provenance + sources, `also_accept`, 5 new failure codes, confidence + Brier, review deck, 75% mastery gating
+- [ ] Phase 1: agent security and binding actions: MCP data agent, inbox assistant, computer-use packs; Red Team Sim, Twin Trace, Spot the Eval Bug ([roadmap](docs/research/coverage-expansion.md))
 - [ ] **Pack Forge**: a self-improving loop. An agent drafts packs, evals grade them, failures become lessons for the next run, and every draft arrives as a PR for human review.
 - [ ] Pro tier: judge calibration with Cohen's κ, drift, CI release gates
 - [ ] SME boss fights

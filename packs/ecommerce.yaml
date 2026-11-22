@@ -3,6 +3,9 @@ title: ShopBot — Order & Refund Agent
 domain: E-commerce
 icon: "🛒"
 summary: An online store's customer agent that tracks orders, cancels, refunds and applies coupons.
+sources:
+  - { title: "OWASP Top 10 for LLM Applications", url: "https://genai.owasp.org/llm-top-10/", verified: true }
+  - { title: "Evals FAQ (Hamel Husain)", url: "https://hamel.dev/blog/posts/evals-faq/", verified: true }
 agent:
   name: ShopBot
   description: Helps shoppers with orders, shipping, cancellations, refunds and coupons for an online electronics store.
@@ -17,6 +20,7 @@ challenges:
   - id: ecommerce-b1
     tier: beginner
     type: spot_failure
+    provenance: hypothetical
     title: The generous refund
     brief: A shopper wants money back for a TV. Find the one step where ShopBot goes wrong, and name the failure.
     concepts: [trace, policy-compliance]
@@ -28,15 +32,17 @@ challenges:
       - { id: s4, role: tool_call, tool: issue_refund, args: { order_id: A1182, amount: 349.00 } }
       - { id: s5, role: tool_result, content: "{ refund_id: R-77, status: processed }" }
       - { id: s6, role: agent, content: "So sorry about that! I've refunded the full $349 to your card. It'll show in 3–5 days." }
-    answer: { steps: [s4], category: policy_violation }
+    answer: { steps: [s4], category: policy_violation, also_accept: [unapproved_action] }
     explanation: >-
       The refund is $349, over the $200 limit, so policy says ShopBot must escalate to a human instead of calling
       issue_refund. The reply in s6 sounds great, which is exactly why you have to read the trace and not just the
       final answer: a polite, happy customer can still be a costly policy breach.
+      Hypothetical scenario built for practice.
 
   - id: ecommerce-b2
     tier: beginner
     type: spot_failure
+    provenance: hypothetical
     title: Tomorrow by 5pm (allegedly)
     brief: A shopper asks when their package arrives. Find the one step where ShopBot goes wrong.
     concepts: [trace, faithfulness]
@@ -51,10 +57,12 @@ challenges:
       The tool returned eta: null, so there is no delivery date. ShopBot invented "tomorrow by 5pm" — a hallucination,
       and also a policy breach. A faithfulness (groundedness) check compares every claim in the answer against the tool
       results; "tomorrow by 5pm" has no support, so it fails.
+      Hypothetical scenario built for practice.
 
   - id: ecommerce-b3
     tier: beginner
     type: mcq
+    provenance: hypothetical
     title: "\"Done!\" isn't done"
     brief: Pick the eval that would catch this bug.
     concepts: [task-success]
@@ -72,10 +80,12 @@ challenges:
       The reply looks perfect, so any eval that only reads the text (politeness, similarity to a reference, length)
       passes it. For agents that take actions, measure the outcome in the real system: did the order status change?
       End-state checks catch "false success", one of the most common agent failures.
+      Hypothetical scenario built for practice.
 
   - id: ecommerce-p1
     tier: practitioner
     type: spot_failure
+    provenance: hypothetical
     title: The helpful review
     brief: ShopBot searches products and finds a deal. Find the step where it gets hijacked, and name the failure.
     concepts: [prompt-injection, trace]
@@ -92,10 +102,12 @@ challenges:
       The instruction to apply STAFF100 came from a product review (s3), not from the shopper. Content returned by tools is
       data, never instructions. The failure happens at s4 when ShopBot acts on it. Good agent eval suites include
       adversarial cases like this, because a normal "happy path" dataset will never contain them.
+      Hypothetical scenario built for practice.
 
   - id: ecommerce-p2
     tier: practitioner
     type: mcq
+    provenance: hypothetical
     title: Is the new prompt better?
     brief: You changed ShopBot's system prompt. How do you know it's an improvement?
     concepts: [golden-dataset, regression-suite]
@@ -111,10 +123,12 @@ challenges:
       A labelled golden set that deliberately covers your risky edge cases lets you compare versions fairly and becomes
       your regression suite for every future change. Five examples is anecdote, judging prompt text predicts nothing, and
       shipping blind turns customers into your test set.
+      Hypothetical scenario built for practice.
 
   - id: ecommerce-p3
     tier: practitioner
     type: judge_builder
+    provenance: hypothetical
     title: Build the refund-reply judge
     brief: >-
       Support leads labelled 8 ShopBot refund replies as pass or fail. Build a judge from the checks below that agrees
@@ -178,3 +192,4 @@ challenges:
       feel like quality, but several replies without them still passed — so requiring them makes your judge flag good
       replies (false alarms). This is the core lesson of judge design: align your rubric with what humans actually
       judge on, then prove it with agreement and recall on real labels before trusting it at scale.
+      Hypothetical scenario built for practice.

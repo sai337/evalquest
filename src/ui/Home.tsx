@@ -1,24 +1,27 @@
 import { useState } from 'react';
 import type { Pack } from '../engine/schema';
 import { dailyChallenge } from '../engine/play';
-import { badges, rankFor, tierProgress, totalXp, type Progress } from '../engine/progress';
+import { badges, rankFor, tierProgress, totalXp, type Progress, type tierMastery } from '../engine/progress';
+import { dueCards, type ReviewState } from '../engine/review';
 import { TIERS, TIER_INFO } from '../engine/taxonomy';
 
 const INTRO_KEY = 'evalquest.intro.dismissed';
 const SITE = 'https://evalquest-livid.vercel.app';
 
-export function Home({ packs, progress, onReset }: { packs: Pack[]; progress: Progress; onReset: () => void }) {
+export function Home({ packs, progress, mastery, review, onReset }: { packs: Pack[]; progress: Progress; mastery: ReturnType<typeof tierMastery>; review: ReviewState; onReset: () => void }) {
   const [intro, setIntro] = useState(() => {
     try { return !localStorage.getItem(INTRO_KEY); } catch { return true; }
   });
   const [copied, setCopied] = useState(false);
   const all = packs.flatMap((p) => p.challenges.map((c) => ({ ...c, pack: p })));
-  const daily = dailyChallenge(all, new Date().toISOString().slice(0, 10));
+  // daily puzzle comes from tiers the player has unlocked
+  const daily = dailyChallenge(all.filter((c) => mastery[c.tier].unlocked), new Date().toISOString().slice(0, 10));
+  const due = dueCards(review).filter((id) => all.some((c) => c.id === id)).length;
   const xp = totalXp(progress);
   const rank = rankFor(xp);
   const tiers = tierProgress(packs, progress);
   const pct = rank.next ? ((xp - rank.xp) / (rank.next.xp - rank.xp)) * 100 : 100;
-  const firstOpen = packs.flatMap((p) => p.challenges).find((c) => progress.solved[c.id]?.score !== 1);
+  const firstOpen = packs.flatMap((p) => p.challenges).find((c) => mastery[c.tier].unlocked && progress.solved[c.id]?.score !== 1);
   const share = async () => {
     const text = `I'm "${rank.name}" (${xp} XP) on EvalQuest — a free game for learning LLM & AI-agent evals. ${SITE}`;
     try {
@@ -70,6 +73,8 @@ export function Home({ packs, progress, onReset }: { packs: Pack[]; progress: Pr
             <li>🧭 <b>Eval Call:</b> choose the eval that would actually catch the problem.</li>
             <li>⚖️ <b>Judge Builder:</b> pick checks for an automated judge, run it on human-labelled samples, and tune until it agrees with the humans.</li>
             <li>Every answer explains the <i>why</i>. Stuck? Hints cost 25% of the XP.</li>
+            <li>Optional: say how sure you are (50–99%) before answering, and see how calibrated you are on the Practice page. Missed puzzles come back for review after 1, 3 and 7 days.</li>
+            <li>Each tier opens at 75% mastery of the tier below.</li>
           </ol>
           <button className="btn" onClick={() => { setIntro(false); try { localStorage.setItem(INTRO_KEY, '1'); } catch { /* ignore */ } }}>Got it</button>
         </div>
@@ -83,12 +88,21 @@ export function Home({ packs, progress, onReset }: { packs: Pack[]; progress: Pr
         </a>
       )}
 
+      {due > 0 && (
+        <a className="panel daily" href="#/profile">
+          <span className="eyebrow">Review deck</span>
+          <b>🔁 {due} challenge{due > 1 ? 's' : ''} to review</b>
+          <span className="muted small">Spaced review beats rereading. Get them right to push them out to 3 and 7 days.</span>
+        </a>
+      )}
+
       <h2>The ladder</h2>
       <div className="ladder">
         {TIERS.map((t, i) => {
           const tp = tiers[t];
           const info = TIER_INFO[t];
-          const locked = tp.total === 0;
+          const empty = tp.total === 0;
+          const locked = empty || !mastery[t].unlocked;
           return (
             <a key={t} href={`#/tier/${t}`} className={`rung ${locked ? 'locked' : ''}`} style={{ borderColor: info.color }}>
               <div className="rung-n" style={{ background: info.color }}>{i + 1}</div>
@@ -96,7 +110,7 @@ export function Home({ packs, progress, onReset }: { packs: Pack[]; progress: Pr
                 <b>{info.label}</b>
                 <div className="muted small">{info.blurb}</div>
               </div>
-              <div className="small rung-p">{locked ? 'coming soon' : `${tp.done}/${tp.total} →`}</div>
+              <div className="small rung-p">{empty ? 'coming soon' : !mastery[t].unlocked ? '🔒 75% below' : `${tp.done}/${tp.total} · ${Math.round(mastery[t].mastery * 100)}% →`}</div>
             </a>
           );
         })}

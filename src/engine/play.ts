@@ -20,3 +20,17 @@ export function nextUnsolved<T extends { id: string }>(list: T[], currentId: str
   }
   return undefined;
 }
+
+/**
+ * How one graded attempt counts. `correct` feeds the confidence log (was the answer right?);
+ * `review` feeds the review deck: anything short of a clean, hint-free solve comes back.
+ * A failing Judge Builder run is iteration (the mechanic expects several runs), so it is not a miss.
+ */
+export function attemptOutcome(type: string, rawScore: number, usedHint: boolean): { correct: boolean; review: 'correct' | 'miss' | null } {
+  if (type === 'judge_builder') {
+    if (rawScore <= 0) return { correct: false, review: null };
+    return { correct: true, review: rawScore >= 1 && !usedHint ? 'correct' : 'miss' };
+  }
+  const correct = rawScore >= 1;
+  return { correct, review: correct && !usedHint ? 'correct' : 'miss' };
+}

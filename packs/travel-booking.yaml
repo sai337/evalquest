@@ -3,6 +3,9 @@ title: Atlas — Travel Booking Agent
 domain: Travel
 icon: "✈️"
 summary: A booking agent that searches flights and hotels, holds fares and books trips.
+sources:
+  - { title: "Courts tell companies they own what their chatbot says (PYMNTS)", url: "https://www.pymnts.com/news/artificial-intelligence/chatbot-tracker/2026/courts-tell-companies-they-own-what-their-chatbot-says/", verified: true }
+  - { title: "tau-bench: tool-agent-user interaction benchmark (arXiv 2406.12045)", url: "https://arxiv.org/abs/2406.12045", verified: true }
 agent:
   name: Atlas
   description: Plans and books flights and hotels for travellers, end to end.
@@ -16,6 +19,7 @@ challenges:
   - id: travel-booking-b1
     tier: beginner
     type: spot_failure
+    provenance: hypothetical
     title: Friday, more or less
     brief: A traveller asks for a flight. Find the one step where Atlas goes wrong, and name the failure.
     concepts: [tool-call-accuracy]
@@ -31,10 +35,12 @@ challenges:
       The traveller said Friday Dec 12; Atlas searched Dec 13. Right tool, wrong argument. The reply even hides the
       error by not repeating the date. Tool-call evals compare arguments to the request field by field, because a
       fluent answer can sit on top of a wrong query.
+      Hypothetical scenario built for practice.
 
   - id: travel-booking-b2
     tier: beginner
     type: mcq
+    provenance: hypothetical
     title: Did the trip get booked?
     brief: Pick the eval that best measures whether Atlas succeeded.
     concepts: [task-success, execution-based]
@@ -49,10 +55,12 @@ challenges:
     explanation: >-
       Execution-based checks on the real end state are the gold standard for agents that act. They catch "false
       success" (no booking at all) and partial success (booked, but the wrong date).
+      Hypothetical scenario built for practice.
 
   - id: travel-booking-p1
     tier: practitioner
     type: spot_failure
+    provenance: hypothetical
     title: Booked before you blink
     brief: Find the step where Atlas breaks its rules, and name the failure.
     concepts: [policy-compliance, trajectory]
@@ -64,15 +72,17 @@ challenges:
       - { id: s4, role: tool_call, tool: book, args: { hotel: "Lone Star Inn", check_in: "2026-12-12", check_out: "2026-12-14" } }
       - { id: s5, role: tool_result, content: "{ confirmation: LS-5521, charged: 318 }" }
       - { id: s6, role: agent, content: "Done! Lone Star Inn is booked for $318, confirmation LS-5521." }
-    answer: { steps: [s4], category: policy_violation }
+    answer: { steps: [s4], category: unapproved_action, also_accept: [policy_violation] }
     explanation: >-
       The traveller asked a question, not for a booking. Atlas charged $318 for a non-refundable room without stating the
       fare rules or getting a "yes". The outcome looks like success, which is why trajectory evals (was there an explicit
       confirmation step before book?) are essential for agents that spend money.
+      Hypothetical scenario built for practice.
 
   - id: travel-booking-p2
     tier: practitioner
     type: judge_builder
+    provenance: hypothetical
     title: Build the itinerary-summary judge
     brief: Travel ops labelled 8 itinerary summaries. Build a judge that agrees with them at least 90% of the time.
     concepts: [llm-as-judge, human-labels]
@@ -98,10 +108,12 @@ challenges:
     explanation: >-
       Ops only failed summaries with wrong dates or a wrong total: the things that make a traveller miss a flight or
       dispute a charge. Style (emoji, loyalty, length) varied freely among passing summaries.
+      Hypothetical scenario built for practice.
 
   - id: travel-booking-a1
     tier: advanced
     type: spot_failure
+    provenance: hypothetical
     title: Never mind, make it Thursday
     brief: The traveller changes their mind mid-conversation. Find the step where Atlas goes wrong, and name the failure.
     concepts: [multi-turn, tool-call-accuracy]
@@ -121,3 +133,4 @@ challenges:
       The traveller switched to Thursday (UA 1190) and approved $155, but Atlas booked the original Friday flight. Each
       message looks fine alone; the failure only exists across turns. Multi-turn evals score the final action against
       the latest state of the user's request, so simulated users who change their minds belong in every agent test set.
+      Hypothetical scenario built for practice.

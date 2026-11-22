@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { loadPacks } from './engine/packs';
-import { loadProgress, mergeProgress, rankFor, record, saveProgress, totalXp, type Progress } from './engine/progress';
+import { loadProgress, mergeProgress, rankFor, record, saveProgress, tierMastery, totalXp, type Progress } from './engine/progress';
+import { addConfidence, loadConfidence, saveConfidence, type ConfidenceEntry } from './engine/calibration';
+import { loadReview, saveReview, updateReview, type ReviewState } from './engine/review';
+import { Profile } from './ui/Profile';
 import { cloudEnabled, pullProgress, pushProgress, signInWithGitHub, signOut, supabase, type Session } from './engine/cloud';
 import { Leaderboard } from './ui/Leaderboard';
 import type { Challenge } from './engine/schema';
 import { Home } from './ui/Home';
 import { PackView } from './ui/PackView';
-import { ChallengeView } from './ui/ChallengeView';
+import { ChallengeView, type AttemptMeta } from './ui/ChallengeView';
 import { Glossary } from './ui/Glossary';
 import { TierView } from './ui/TierView';
 import { TIERS, type Tier } from './engine/taxonomy';
@@ -29,6 +32,9 @@ function useHash() {
 export default function App() {
   const { packs, errors } = useMemo(loadPacks, []);
   const [progress, setProgress] = useState<Progress>(loadProgress);
+  const [confLog, setConfLog] = useState<ConfidenceEntry[]>(loadConfidence);
+  const [review, setReview] = useState<ReviewState>(loadReview);
+  const mastery = useMemo(() => tierMastery(packs, progress), [packs, progress]);
   const route = useHash();
 
   const [toast, setToast] = useState<string | null>(null);
@@ -66,7 +72,16 @@ export default function App() {
     return () => clearTimeout(t);
   }, [toast]);
 
-  const onScore = (ch: Challenge, score: number) => {
+  const onScore = (ch: Challenge, score: number, meta: AttemptMeta) => {
+    if (meta.review) {
+      const r = updateReview(review, ch.id, meta.review === 'correct');
+      if (r !== review) { saveReview(r); setReview(r); }
+    }
+    if (meta.confidence !== null) {
+      const log = addConfidence(confLog, { id: ch.id, p: meta.confidence, correct: meta.correct, at: new Date().toISOString() });
+      saveConfidence(log);
+      setConfLog(log);
+    }
     const next = record(progress, ch, score);
     if (next === progress) return;
     const before = totalXp(progress), after = totalXp(next);
@@ -81,6 +96,8 @@ export default function App() {
     const empty = { solved: {} };
     saveProgress(empty);
     setProgress(empty);
+    saveReview({}); setReview({});
+    saveConfidence([]); setConfLog([]);
     if (userId) pushProgress(userId, empty);
   };
 
@@ -92,15 +109,20 @@ export default function App() {
   } else if (view === 'c') {
     const pack = packs.find((p) => p.challenges.some((c) => c.id === arg));
     const ch = pack?.challenges.find((c) => c.id === arg);
-    body = pack && ch ? <ChallengeView key={ch.id} pack={pack} packs={packs} challenge={ch} progress={progress} onScore={onScore} /> : <NotFound />;
+    const ti = ch ? TIERS.indexOf(ch.tier) : 0;
+    const below = TIERS.slice(0, ti).reverse().find((t) => mastery[t].total > 0);
+    const gate = ch ? { unlocked: mastery[ch.tier].unlocked, below, mastery: below ? mastery[below].mastery : 1 } : { unlocked: true, mastery: 1 };
+    body = pack && ch ? <ChallengeView key={ch.id} pack={pack} packs={packs} challenge={ch} progress={progress} gate={gate} onScore={onScore} /> : <NotFound />;
   } else if (view === 'tier' && TIERS.includes(arg as Tier)) {
-    body = <TierView tier={arg as Tier} packs={packs} progress={progress} />;
+    body = <TierView tier={arg as Tier} packs={packs} progress={progress} mastery={mastery} />;
+  } else if (view === 'profile') {
+    body = <Profile packs={packs} progress={progress} mastery={mastery} review={review} confLog={confLog} />;
   } else if (view === 'leaderboard') {
     body = <Leaderboard session={session} showOnBoard={showOnBoard} onToggle={setShowOnBoard} onSignIn={signIn} />;
   } else if (view === 'glossary') {
     body = <Glossary />;
   } else {
-    body = <Home packs={packs} progress={progress} onReset={resetProgress} />;
+    body = <Home packs={packs} progress={progress} mastery={mastery} review={review} onReset={resetProgress} />;
   }
 
   return (
@@ -111,6 +133,7 @@ export default function App() {
         </a>
         <nav>
           {cloudEnabled && <a href="#/leaderboard">🏆 Board</a>}
+          <a href="#/profile">Practice</a>
           <a href="#/glossary">Glossary</a>
           <a href={REPO} target="_blank" rel="noreferrer">★ Star</a>
           {cloudEnabled &&

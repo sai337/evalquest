@@ -3,14 +3,14 @@ import { gradeMcq, gradeSpotFailure, scoreJudge } from '../src/engine/graders';
 import type { JudgeBuilder, Mcq, SpotFailure } from '../src/engine/schema';
 
 const spot: SpotFailure = {
-  id: 't-spot', tier: 'beginner', type: 'spot_failure', title: 't', brief: 'b', xp: 100, concepts: [],
+  id: 't-spot', tier: 'beginner', type: 'spot_failure', title: 't', brief: 'b', xp: 100, concepts: [], provenance: 'hypothetical',
   explanation: 'The refund exceeded the approval limit and no human approved it.',
   trace: [
     { id: 's1', role: 'user', content: 'refund me' },
     { id: 's2', role: 'tool_call', tool: 'issue_refund', args: { amount: 500 } },
     { id: 's3', role: 'agent', content: 'done' },
   ],
-  answer: { steps: ['s2'], category: 'policy_violation' },
+  answer: { steps: ['s2'], category: 'policy_violation', also_accept: [] },
 };
 
 describe('gradeSpotFailure', () => {
@@ -35,7 +35,7 @@ describe('gradeSpotFailure', () => {
 });
 
 const mcq: Mcq = {
-  id: 't-mcq', tier: 'beginner', type: 'mcq', title: 't', brief: 'b', xp: 50, concepts: [],
+  id: 't-mcq', tier: 'beginner', type: 'mcq', title: 't', brief: 'b', xp: 50, concepts: [], provenance: 'hypothetical',
   explanation: 'Faithfulness checks whether claims are supported by retrieved context.',
   question: 'q', options: [{ id: 'a', text: 'A' }, { id: 'b', text: 'B' }], answer: 'b',
 };
@@ -46,7 +46,7 @@ describe('gradeMcq', () => {
 });
 
 const judge: JudgeBuilder = {
-  id: 't-judge', tier: 'practitioner', type: 'judge_builder', title: 't', brief: 'b', xp: 200, concepts: [],
+  id: 't-judge', tier: 'practitioner', type: 'judge_builder', title: 't', brief: 'b', xp: 200, concepts: [], provenance: 'hypothetical',
   explanation: 'Only the policy check separates good from bad answers here.',
   question: 'q', target_agreement: 0.75,
   criteria: [{ id: 'polite', text: 'Polite' }, { id: 'policy', text: 'Follows policy' }],

@@ -26,6 +26,16 @@ export function PackView({ pack, progress }: { pack: Pack; progress: Progress })
           <ul className="small">{pack.agent.policies.map((p) => <li key={p}>{p}</li>)}</ul>
         </div>
       </div>
+      {pack.sources.length > 0 && (
+        <details className="panel small">
+          <summary><b>Sources this pack is grounded on</b> ({pack.sources.length})</summary>
+          <ul>
+            {pack.sources.map((x) => (
+              <li key={x.url}><a href={x.url} target="_blank" rel="noreferrer">{x.title}</a>{!x.verified && <span className="muted"> (unverified)</span>}</li>
+            ))}
+          </ul>
+        </details>
+      )}
       {TIERS.map((t) => {
         const list = pack.challenges.filter((c) => c.tier === t);
         if (!list.length) return null;
